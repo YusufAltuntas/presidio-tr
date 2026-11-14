@@ -10,7 +10,7 @@ guardrail'ine takılarak, Türkçe metindeki kişisel verilerin LLM sağlayıcı
 cevapta geri açılmasını sağlar. Etkisi sentetik Türkçe benchmark ile ölçülür.
 
 **Neden:** Presidio'da `TrNationalIdRecognizer` (yalnızca checksum, varsayılan olarak kapalı) ve
-`TrLicensePlateRecognizer` var; VKN tanıyıcısı yok, Türk telefonu henüz açık PR'da. `presidio-tr` VKN'yi,
+`TrLicensePlateRecognizer` var; VKN tanıyıcısı yok, Türkiye'ye özel telefon tanıyıcısı yok (2.2.366). `presidio-tr` VKN'yi,
 TCKN/VKN/IBAN için yazım hatası kademesini (checksum geçersiz + bağlam → 0.6), Türkiye'ye özel telefonu ve
 Türkçe ek toleranslı bağlam eşleştirmeyi ekler. Varsayılan `AnalyzerEngine()` hazır tanıyıcıları yalnızca `en`
 için kaydeder. Geri alınabilir maskeleme (`output_parse_pii`) ve streaming desteği LiteLLM'de zaten var;

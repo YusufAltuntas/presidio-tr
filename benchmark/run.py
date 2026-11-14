@@ -1,4 +1,4 @@
-"""Varsayılan Presidio ile Presidio + presidio-tr'yi aynı veri üzerinde karşılaştırır.
+"""Varsayılan Presidio (en), Türkçe kurulmuş Presidio ve Presidio + presidio-tr'yi aynı veri üzerinde karşılaştırır.
 
 Kullanım: python -m benchmark.run --data benchmark/data/tr_pii.jsonl --out-dir benchmark/results
 """

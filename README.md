@@ -7,12 +7,12 @@ Microsoft'un resmi projesi değildir; topluluk paketidir.
 
 ## Neden
 
-Presidio'da `TrNationalIdRecognizer` (yalnızca checksum, varsayılan olarak kapalı) ve `TrLicensePlateRecognizer`
+Presidio'da `TrNationalIdRecognizer` (checksum doğrulamalı, yazım hatası kademesi yok, varsayılan olarak kapalı) ve `TrLicensePlateRecognizer`
 zaten var. `presidio-tr` şunları ekler:
 
 - VKN tanıyıcısı (upstream'de yok).
 - TCKN, VKN ve IBAN için yazım hatası kademesi: checksum'ı geçmeyen ama yakınında bağlam kelimesi olan değer 0.6 skorla maskelenir.
-- Türkiye'ye özel telefon tanıyıcısı (upstream'deki TR telefon çalışması hâlâ açık bir PR).
+- Türkiye'ye özel telefon tanıyıcısı (presidio-analyzer 2.2.366'da yok).
 - Türkçe ek toleranslı bağlam eşleştirme ("IBAN'ım", "hesabınız").
 - Gateway demosu ve bulguları (aşağıda).
 
@@ -100,7 +100,7 @@ bakın (`src/presidio_tr/__init__.py`). Boş (blank) spaCy `tr` pipeline'ı kull
 | Checksum geçersiz, bağlam yok | Atılır |
 
 Bir hanesi yanlış yazılmış TC kimlik no sızmasın, bağlamsız bir sipariş no maskelenmesin diye üç kademe vardır.
-Telefonun checksum'ı yok; doğrulayıcı yalnızca biçime bakar (+90/0 önekli numara bağlamsız da maskelenir, öneksiz 10 hane bağlam ister).
+Telefonun checksum'ı yok; doğrulayıcı yalnızca biçime bakar (+90 / 0090 / 90 / 0 önekli numara bağlamsız da maskelenir, öneksiz 10 hane bağlam ister).
 
 VKN istisnası: VKN'nin tek bir mod-10 kontrol hanesi var, rastgele 10 haneli sayıların yaklaşık %10'u geçer.
 Bu yüzden VKN için bağlam zorunludur; bağlamsız yazılmış geçerli VKN maskelenmez.
@@ -145,8 +145,8 @@ Beklenen çıktı: `TC kimlik no 10000000146, telefon 0532 123 45 67.` (değerle
 Yayınlanan portlar yalnızca `127.0.0.1`'e bağlıdır. LiteLLM başladıktan sonra yaklaşık 15 sn içinde
 (`/health/liveliness`) cevap vermeye başlar. Durdurmak için: `docker compose -f deploy/docker-compose.yml down`.
 
-Hata davranışı: analyzer erişilemezse istek reddedilir (fail-closed; e2e testle doğrulandı). Bu davranış
-guardrail'de `output_parse_pii`'nin açık olmasına dayanır.
+Hata davranışı: analyzer erişilemezse istek reddedilir (fail-closed; e2e testle doğrulandı). Analyzer hata ya da geçersiz
+cevap dönerse reddedilmesi guardrail'de `output_parse_pii`'nin açık olmasına bağlıdır.
 
 Demo bulguları (LiteLLM 1.109.1):
 
@@ -160,7 +160,7 @@ Demo bulguları (LiteLLM 1.109.1):
 ## Testler ve geliştirme
 
 ```bash
-uv run pytest                                                 # birim testler (79)
+uv run pytest                                                 # birim testler (80)
 set -a && . deploy/.env && set +a && uv run pytest -m e2e     # uçtan uca (7)
 ```
 

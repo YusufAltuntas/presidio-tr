@@ -1,5 +1,7 @@
 # presidio-tr v1 Uygulama Planı
 
+> **Tarihsel doküman.** Uygulamadan önce yazılmış plandır; bazı ifadeleri (ör. "Presidio'da TC kimlik tanıyıcısı yok") sonradan yanlış çıktı. Güncel durum: `README.md` ve spec.
+
 > **Ajanlar için:** GEREKLİ ALT-SKILL: Bu planı görev görev uygulamak için `subagent-driven-development` (önerilen) ya da `executing-plans` kullan. Adımlar takip için checkbox (`- [ ]`) biçimindedir.
 
 > Bu doküman v1'in **uygulama adımlarının** sahibidir. Ne yapıldığı ve nedeni: `docs/superpowers/specs/2026-11-14-presidio-tr-design.md`.

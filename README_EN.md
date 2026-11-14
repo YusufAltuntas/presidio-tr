@@ -7,12 +7,12 @@ This is not an official Microsoft project; it is a community package.
 
 ## Why
 
-Presidio already ships `TrNationalIdRecognizer` (checksum only, disabled by default) and
+Presidio already ships `TrNationalIdRecognizer` (checksum-validated, no typo tier, disabled by default) and
 `TrLicensePlateRecognizer`. `presidio-tr` adds:
 
 - A VKN (tax ID) recognizer (none upstream).
 - A typo tier for TCKN, VKN and IBAN: a checksum-invalid value with a context word nearby is masked at score 0.6.
-- A Turkey-specific phone recognizer (the upstream TR phone recognizer is still an open PR).
+- A Turkey-specific phone recognizer (none in presidio-analyzer 2.2.366).
 - Turkish suffix-tolerant context matching ("IBAN'ım", "hesabınız").
 - The gateway demo and its findings (below).
 
@@ -100,7 +100,7 @@ for the correct setup. A blank spaCy `tr` pipeline is used, so no model download
 | Checksum invalid, no context | Dropped |
 
 Three tiers so that a national ID with one wrong digit does not leak, and a context-free order number is not
-masked. Phone numbers have no checksum; the validator checks format only (a +90/0-prefixed number is masked without context, a bare 10-digit number needs context).
+masked. Phone numbers have no checksum; the validator checks format only (a +90 / 0090 / 90 / 0-prefixed number is masked without context, a bare 10-digit number needs context).
 
 VKN exception: a VKN has a single mod-10 check digit, so about 10% of random 10-digit numbers pass it. VKN
 therefore requires context; a valid VKN written without context is not masked.
@@ -145,7 +145,7 @@ Published ports are bound to `127.0.0.1` only. LiteLLM needs about 15 s after st
 (`/health/liveliness`). To stop: `docker compose -f deploy/docker-compose.yml down`.
 
 Failure behavior: if the analyzer is unreachable the request is rejected (fail-closed; verified by an e2e test).
-This relies on `output_parse_pii` being enabled on the guardrail.
+If the analyzer returns an error or an invalid response, rejection depends on `output_parse_pii` being enabled on the guardrail.
 
 Demo findings (LiteLLM 1.109.1):
 
@@ -160,7 +160,7 @@ Demo findings (LiteLLM 1.109.1):
 ## Tests and development
 
 ```bash
-uv run pytest                                                 # unit tests (79)
+uv run pytest                                                 # unit tests (80)
 set -a && . deploy/.env && set +a && uv run pytest -m e2e     # end-to-end (7)
 ```
 
