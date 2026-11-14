@@ -1,0 +1,48 @@
+# Langfuse'un resmi compose'u (deploy/langfuse/) aynı .env ile dahil edilir.
+include:
+  - path: langfuse/docker-compose.yml
+    env_file: .env
+
+services:
+  presidio-analyzer:
+    build:
+      context: ..
+      dockerfile: deploy/analyzer.Dockerfile
+
+  presidio-anonymizer:
+    image: mcr.microsoft.com/presidio-anonymizer:2.2.362
+
+  litellm-db:
+    image: docker.io/postgres:17
+    environment:
+      POSTGRES_USER: litellm
+      POSTGRES_PASSWORD: litellm
+      POSTGRES_DB: litellm
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U litellm"]
+      interval: 5s
+      retries: 10
+
+  litellm:
+    image: ghcr.io/berriai/litellm:v1.109.1
+    command: ["--config", "/app/config.yaml", "--port", "4000"]
+    volumes:
+      - ./litellm-config.yaml:/app/config.yaml:ro
+    ports:
+      - 127.0.0.1:4000:4000
+    environment:
+      DATABASE_URL: postgresql://litellm:litellm@litellm-db:5432/litellm
+      LITELLM_MASTER_KEY: ${LITELLM_MASTER_KEY}
+      OPENAI_API_KEY: ${OPENAI_API_KEY}
+      LANGFUSE_PUBLIC_KEY: ${LANGFUSE_INIT_PROJECT_PUBLIC_KEY}
+      LANGFUSE_SECRET_KEY: ${LANGFUSE_INIT_PROJECT_SECRET_KEY}
+      LANGFUSE_HOST: http://langfuse-web:3000
+    depends_on:
+      presidio-analyzer:
+        condition: service_healthy
+      presidio-anonymizer:
+        condition: service_started
+      litellm-db:
+        condition: service_healthy
+      langfuse-web:
+        condition: service_started
