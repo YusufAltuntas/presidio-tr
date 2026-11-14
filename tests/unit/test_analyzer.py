@@ -21,3 +21,10 @@ def test_build_analyzer_keeps_context_tier_score():
 
 def test_build_analyzer_returns_nothing_for_text_without_pii():
     assert build_analyzer().analyze("Kargonuz yarın teslim edilecek.", language="tr") == []
+
+
+def test_build_analyzer_explanation_score_matches_result_score():
+    results = build_analyzer().analyze("TC 10000000146", language="tr", return_decision_process=True)
+    assert len(results) == 1
+    assert results[0].score == 1.0
+    assert results[0].analysis_explanation.score == 1.0

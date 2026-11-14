@@ -54,11 +54,14 @@ def test_tr_iban_valid_rejects_invalid_iban(value):
     assert not tr_iban_valid(value)
 
 
-@pytest.mark.parametrize("value", ["+90 532 123 45 67", "0532 123 4567", "05321234567", "+902121234567"])
+@pytest.mark.parametrize(
+    "value",
+    ["+90 532 123 45 67", "0532 123 4567", "05321234567", "+902121234567", "00905321234567", "0090 532 123 45 67"],
+)
 def test_tr_phone_valid_accepts_prefixed_numbers(value):
     assert tr_phone_valid(value)
 
 
-@pytest.mark.parametrize("value", ["5321234567", "0632 123 4567", "+90 132 123 45 67", "123"])
+@pytest.mark.parametrize("value", ["5321234567", "0632 123 4567", "+90 132 123 45 67", "123", "0090 132 123 45 67"])
 def test_tr_phone_valid_rejects_bare_or_malformed_numbers(value):
     assert not tr_phone_valid(value)

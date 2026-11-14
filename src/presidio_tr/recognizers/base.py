@@ -51,5 +51,7 @@ class TurkishPatternRecognizer(PatternRecognizer):
                 result.score = CONTEXT_SCORE
             else:
                 continue
+            if result.analysis_explanation is not None:
+                result.analysis_explanation.set_improved_score(result.score)
             kept.append(result)
         return kept

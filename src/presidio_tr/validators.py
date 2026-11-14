@@ -44,7 +44,9 @@ def tr_phone_valid(candidate: str) -> bool:
     Öneksiz 10 haneli numara tek başına telefon sayılmaz; bağlam gerekir.
     """
     digits = _NON_DIGIT.sub("", candidate)
-    if len(digits) == 12 and digits.startswith("90"):
+    if len(digits) == 14 and digits.startswith("0090"):
+        national = digits[4:]
+    elif len(digits) == 12 and digits.startswith("90"):
         national = digits[2:]
     elif len(digits) == 11 and digits.startswith("0"):
         national = digits[1:]
