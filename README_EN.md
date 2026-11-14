@@ -58,7 +58,7 @@ There is no separate benchmark row for the thresholded variant.
 Not published on PyPI; install from the repo:
 
 ```bash
-git clone <repo-url> && cd presidio-tr
+git clone https://github.com/YusufAltuntas/presidio-tr.git && cd presidio-tr
 uv sync
 ```
 

@@ -58,7 +58,7 @@ Eşikli sürüm için ayrı bir benchmark satırı yoktur.
 PyPI'da yayınlı değil; repodan kurulur:
 
 ```bash
-git clone <repo-url> && cd presidio-tr
+git clone https://github.com/YusufAltuntas/presidio-tr.git && cd presidio-tr
 uv sync
 ```
 
