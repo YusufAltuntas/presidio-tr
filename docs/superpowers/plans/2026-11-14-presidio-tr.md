@@ -836,7 +836,10 @@ def test_generate_is_deterministic_for_a_seed():
 def test_every_template_renders():
     rng, fake = random.Random(0), Faker("tr_TR")
     for template in TEMPLATES:
-        render(template, rng, fake)
+        row = render(template, rng, fake)
+        assert "{" not in row["text"]
+        for span in row["spans"] + row["negatives"]:
+            assert 0 <= span["start"] < span["end"] <= len(row["text"])
 ```
 
 - [ ] **Adım 2: Testin başarısız olduğunu gör**
