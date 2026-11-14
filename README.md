@@ -81,7 +81,7 @@ kullanılır, model indirmek gerekmez.
 | Checksum geçersiz, bağlam yok | Atılır |
 
 Bir hanesi yanlış yazılmış TC kimlik no sızmasın, bağlamsız bir sipariş no maskelenmesin diye üç kademe vardır.
-Telefonun checksum'ı yok; format + bağlam ile skorlanır.
+Telefonun checksum'ı yok; doğrulayıcı yalnızca biçime bakar (+90/0 önekli numara bağlamsız da maskelenir, öneksiz 10 hane bağlam ister).
 
 VKN istisnası: VKN'nin tek bir mod-10 kontrol hanesi var, rastgele 10 haneli sayıların yaklaşık %10'u geçer.
 Bu yüzden VKN için bağlam zorunludur; bağlamsız yazılmış geçerli VKN maskelenmez.

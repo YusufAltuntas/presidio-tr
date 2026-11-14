@@ -81,7 +81,7 @@ pipeline is used, so no model download is needed.
 | Checksum invalid, no context | Dropped |
 
 Three tiers so that a national ID with one wrong digit does not leak, and a context-free order number is not
-masked. Phone numbers have no checksum; they are scored by format plus context.
+masked. Phone numbers have no checksum; the validator checks format only (a +90/0-prefixed number is masked without context, a bare 10-digit number needs context).
 
 VKN exception: a VKN has a single mod-10 check digit, so about 10% of random 10-digit numbers pass it. VKN
 therefore requires context; a valid VKN written without context is not masked.
