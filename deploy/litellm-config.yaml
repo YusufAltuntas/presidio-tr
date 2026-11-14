@@ -17,6 +17,17 @@ guardrails:
       presidio_analyzer_api_base: http://presidio-analyzer:3000
       presidio_anonymizer_api_base: http://presidio-anonymizer:3000
 
+  # Log kopyasını maskeler (canlı isteğe dokunmaz); geri açılan cevap Langfuse'a ham PII olarak gitmesin.
+  - guardrail_name: presidio-tr-logs
+    litellm_params:
+      guardrail: presidio
+      mode: logging_only
+      default_on: true
+      presidio_filter_scope: input
+      presidio_language: tr
+      presidio_analyzer_api_base: http://presidio-analyzer:3000
+      presidio_anonymizer_api_base: http://presidio-anonymizer:3000
+
 litellm_settings:
   success_callback: ["langfuse"]
 

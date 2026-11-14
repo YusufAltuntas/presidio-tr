@@ -121,8 +121,11 @@ Plan yazılırken presidio-analyzer 2.2.366 ve LiteLLM 1.109.1 ile bir deneme (s
    Tanıyıcılara Presidio `context` verilmez, böylece Presidio'nun güçlendiricisi devreye girmez.
 3. **Aynı türden iki değer — çözüldü.** LiteLLM etiketleri kendisi numaralıyor (`<TR_NATIONAL_ID_1>`,
    `<TR_NATIONAL_ID_2>`); e2e testi yine de doğrular.
-4. **Langfuse'a ne gidiyor — açık.** E2E testi kontrol eder. Ham PII görülürse ikinci bir guardrail
-   `mode: logging_only` ile log kopyası maskelenir.
+4. **Langfuse'a ne gidiyor — çözüldü.** E2E testi, geri açılan cevabın Langfuse'a ham PII olarak gittiğini
+   gösterdi (girdi zaten maskeliydi). Yedek uygulandı: ikinci guardrail `presidio-tr-logs`
+   (`mode: logging_only`) log kopyasını maskeler; bu girişte `presidio_filter_scope: input` şart (doğrulandı):
+   yoksa LiteLLM maskelemeyi canlı cevap nesnesine de uygulayıp kullanıcıya `<TR_NATIONAL_ID>` döndürüyor.
+   Langfuse v4 `events_only` modunda v1 `/api/public/traces` kapalı; test `/api/public/v2/observations` kullanır.
 5. **Fail-closed — kısmen çözüldü.** LiteLLM 1.109.1, `output_parse_pii` açıkken analyzer'dan geçersiz cevap
    gelirse isteği reddediyor. Analyzer'a hiç ulaşılamama durumu e2e testinde doğrulanır. Sunucu desteklenmeyen
    dil için 400 döner, LiteLLM bunu da reddeder.
