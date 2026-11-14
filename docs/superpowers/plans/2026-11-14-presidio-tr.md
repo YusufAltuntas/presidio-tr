@@ -14,6 +14,14 @@
 
 **Çalışma dizini:** Tüm komutlar repo kökünde: `~/Desktop/my-projects/presidio-tr`.
 
+**Uygulama sırasında yapılan düzeltmeler** (görev incelemelerinden, kullanıcı onayıyla; aşağıdaki görev metinleri
+ilk hâlidir, güncel davranış koddadır — commit `6d0217a..401cb73`):
+- `TurkishPatternRecognizer`'a `requires_context` eklendi; `VknRecognizer` bağlamsız eşleşmeyi atar (spec, "VKN istisnası").
+- Analyzer testi skorları da doğrular.
+- Benchmark tarihleri seed'li rng'den üretilir; `ref_no` geçerli VKN olamaz; bağlam kelimeli zor negatif şablonlar eklendi.
+- Bu yüzden Görev 8'deki prototip benchmark sayıları artık geçerli değil; yeni sonuç `benchmark/results/` altındadır.
+- Test sayıları da değişti: Görev 9 sonunda ve Görev 14'te beklenen `65 passed` yerine `68 passed`.
+
 ---
 
 ## Dosya haritası

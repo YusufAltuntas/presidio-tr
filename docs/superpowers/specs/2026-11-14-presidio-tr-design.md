@@ -84,6 +84,11 @@ Checksum'dan geçemeyen numarayı düz atlamak güvenlik açığıdır (bir hane
 
 Telefonun checksum'ı yok; format (`+90`, `0`, `5xx`, boşluk/tire varyantları) + bağlam ile skorlanır.
 
+**VKN istisnası — bağlam zorunlu.** VKN'nin tek kontrol hanesi var; rastgele 10 haneli sayıların ~%10'u checksum'dan
+geçer. Bu yüzden VKN yakınında bağlam kelimesi yoksa checksum geçerli olsa da atlanır; bağlam varsa yukarıdaki iki
+kademe uygulanır. Bedeli: bağlamsız yazılmış gerçek VKN maskelenmez. (TCKN'de iki kontrol hanesi var, rastgele
+geçme ~%1; IBAN'da `TR` öneki + mod-97 — bunlarda bağlam zorunlu değil.)
+
 ## Veri akışı
 
 1. İstemci → LiteLLM (virtual key + `user` alanı).
@@ -144,6 +149,12 @@ Plan yazılırken presidio-analyzer 2.2.366 ve LiteLLM 1.109.1 ile bir deneme (s
 
 - ~1.000 etiketli cümle; `Faker('tr_TR')` + 30–50 şablon (müşteri hizmetleri, banka, telco tonu).
 - Bilerek: hatalı yazılmış numaralar, PII'ye benzeyen ama olmayan sayılar (sipariş no, tutar, tarih).
+- **Zor negatifler:** bağlam kelimesi taşıyan ama PII olmayan sayılar ("Kimlik doğrulama kodunuz …", "Vergi dairesi
+  başvuru numaranız …"). Bunlar olmadan 0.6 kademesinin yanlış pozitifleri hiç ölçülmez ve benchmark kendi
+  şablonlarıyla kendini doğrular.
+- Negatif sayılar checksum'a göre süzülür (sipariş no geçerli TCKN, referans no geçerli VKN olamaz); aksi halde
+  gerçek PII "PII değil" diye etiketlenir.
+- Tüm değerler (tarih dahil) seed'li `random.Random`'dan üretilir; aynı seed her gün aynı veriyi verir.
 - Karşılaştırma: (a) varsayılan Presidio — `language=en` ve hazır tanıyıcılarla, yani Türkçe desteği olmayan
   bir kullanıcının elinde olan; (b) Presidio + `presidio-tr`, `language=tr`. Varlık türü başına P/R/F1.
 - Tür gözetmeyen "maskelenen" oranı da raporlanır: varsayılan Presidio TC kimliği yanlış türle
