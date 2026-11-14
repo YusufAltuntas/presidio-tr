@@ -31,7 +31,7 @@ FIELDS = {
     "city": (lambda r, f: f.city(), None),
     "order_no": (lambda r, f: synth.order_no(r), NEGATIVE),
     "amount": (lambda r, f: f"{r.randint(10, 99999):,}".replace(",", ".") + f",{r.randint(0, 99):02d} TL", None),
-    "date": (lambda r, f: f.date(pattern="%d.%m.%Y"), None),
+    "date": (lambda r, f: f"{r.randint(1, 28):02d}.{r.randint(1, 12):02d}.{r.randint(2015, 2026)}", None),
     "ref_no": (lambda r, f: str(r.randint(10**9, 10**10 - 1)), NEGATIVE),
 }
 

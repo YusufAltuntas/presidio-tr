@@ -25,3 +25,10 @@ def test_every_template_renders():
         assert "{" not in row["text"]
         for span in row["spans"] + row["negatives"]:
             assert 0 <= span["start"] < span["end"] <= len(row["text"])
+
+
+def test_date_depends_only_on_rng():
+    first = render("{date}", random.Random(1), Faker("tr_TR"))
+    fake = Faker("tr_TR")
+    fake.seed_instance(999)
+    assert render("{date}", random.Random(1), fake) == first
