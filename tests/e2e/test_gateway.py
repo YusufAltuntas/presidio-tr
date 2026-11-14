@@ -97,7 +97,10 @@ def _langfuse_observations_with_output(user: str) -> list[dict]:
             timeout=10,
         )
         observations = response.json().get("data", []) if response.status_code == 200 else []
-        if any(o.get("output") is not None for o in observations):
+        # Gözlemler farklı anlarda yazılır; TC kimliği taşıyan içerik (maskeli ya da değil) gelene kadar bekle.
+        serialized = json.dumps(observations, ensure_ascii=False)
+        has_output = any(o.get("output") is not None for o in observations)
+        if has_output and ("<TR_NATIONAL_ID" in serialized or TCKN_1 in serialized):
             return observations
         time.sleep(3)
     pytest.fail(
