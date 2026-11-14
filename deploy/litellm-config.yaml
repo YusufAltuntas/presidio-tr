@@ -12,6 +12,8 @@ guardrails:
       default_on: true
       presidio_language: tr
       output_parse_pii: true
+      # Varsayılan "both" cevabı da tarar ve geri açılan değerleri yeniden maskeler; yalnızca girdiyi maskele.
+      presidio_filter_scope: input
       presidio_analyzer_api_base: http://presidio-analyzer:3000
       presidio_anonymizer_api_base: http://presidio-anonymizer:3000
 
