@@ -48,13 +48,13 @@ def bare_phone(rng: random.Random) -> str:
     return f"5{rng.randint(0, 5)}{rng.randint(0, 9)}{rng.randint(0, 9999999):07d}"
 
 
-def typo(value: str, rng: random.Random, still_valid: Callable[[str], bool]) -> str:
+def typo(value: str, rng: random.Random, is_valid: Callable[[str], bool]) -> str:
     """Bir hanesi değiştirilmiş, artık checksum'dan geçmeyen numara."""
     positions = [i for i, ch in enumerate(value) if ch.isdigit() and i > 0]
     while True:
         i = rng.choice(positions)
         candidate = value[:i] + str((int(value[i]) + rng.randint(1, 9)) % 10) + value[i + 1 :]
-        if not still_valid(candidate):
+        if not is_valid(candidate):
             return candidate
 
 
@@ -63,4 +63,12 @@ def order_no(rng: random.Random) -> str:
     while True:
         candidate = str(rng.randint(10**10, 10**11 - 1))
         if not tckn_valid(candidate):
+            return candidate
+
+
+def ref_no(rng: random.Random) -> str:
+    """VKN'ye benzeyen ama checksum'dan geçmeyen 10 haneli referans numarası."""
+    while True:
+        candidate = str(rng.randint(10**9, 10**10 - 1))
+        if not vkn_valid(candidate):
             return candidate

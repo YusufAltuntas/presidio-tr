@@ -32,7 +32,7 @@ FIELDS = {
     "order_no": (lambda r, f: synth.order_no(r), NEGATIVE),
     "amount": (lambda r, f: f"{r.randint(10, 99999):,}".replace(",", ".") + f",{r.randint(0, 99):02d} TL", None),
     "date": (lambda r, f: f"{r.randint(1, 28):02d}.{r.randint(1, 12):02d}.{r.randint(2015, 2026)}", None),
-    "ref_no": (lambda r, f: str(r.randint(10**9, 10**10 - 1)), NEGATIVE),
+    "ref_no": (lambda r, f: synth.ref_no(r), NEGATIVE),
 }
 
 TEMPLATES = [
@@ -43,7 +43,7 @@ TEMPLATES = [
     "Nüfus cüzdanımdaki numara {tckn}, sistemde görünmüyor.",
     "TC'm {tckn_typo} olarak girildi ama hata veriyor.",
     "Kimliğimdeki numarayı yazıyorum: {tckn_typo}",
-    "Başvuru formuna {tckn_typo} yazmışım, düzeltebilir misiniz?",
+    "Başvuru formuna {tckn_typo} yazmışım, düzeltebilir misiniz?",  # zor durum: bağlam yok, tasarım gereği kaçar
     # VKN
     "Şirketimizin vergi kimlik numarası {vkn}, faturayı buna kesin.",
     "VKN: {vkn} — {city} Vergi Dairesi.",
@@ -72,6 +72,12 @@ TEMPLATES = [
     "Referans numarası {ref_no} olan talebiniz kapatıldı.",
     "Toplam {amount}, ödeme tarihi {date}.",
     "Kampanya kodu {ref_no} {date} tarihine kadar geçerli.",
+    # Zor negatifler: bağlam kelimesi var ama sayı PII değil
+    "Kimlik doğrulama kodunuz {order_no}, kimseyle paylaşmayın.",
+    "Vergi dairesi başvuru numaranız {ref_no}.",
+    "Telefon faturanızın numarası {ref_no}, son ödeme {date}.",
+    "Hesap hareketi referansı {ref_no} olarak kaydedildi.",
+    "TC Kargo takip numaranız {order_no}.",
 ]
 
 
