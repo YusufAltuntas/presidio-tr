@@ -10,10 +10,11 @@ from collections.abc import Callable
 from dataclasses import dataclass
 from pathlib import Path
 
-from presidio_analyzer import AnalyzerEngine
+from presidio_analyzer import AnalyzerEngine, RecognizerRegistry
 from presidio_analyzer.nlp_engine import NlpEngineProvider
+from presidio_analyzer.predefined_recognizers import TrNationalIdRecognizer
 
-from presidio_tr import build_analyzer
+from presidio_tr import BlankTurkishNlpEngine, build_analyzer
 
 ENTITIES = ("TR_NATIONAL_ID", "TR_TAX_ID", "IBAN_CODE", "PHONE_NUMBER")
 
@@ -90,6 +91,20 @@ def baseline_predictor() -> Callable[[str], list[Span]]:
     return lambda text: [(r.start, r.end, r.entity_type) for r in analyzer.analyze(text, language="en")]
 
 
+def vanilla_turkish_predictor() -> Callable[[str], list[Span]]:
+    """Adil taban çizgisi: Türkçe motor, Presidio'nun hazır tanıyıcıları ve kendi TrNationalIdRecognizer'ı.
+
+    TrNationalIdRecognizer presidio-analyzer'da varsayılan olarak kapalı gelir; burada elle eklenir.
+    """
+    nlp_engine = BlankTurkishNlpEngine()
+    nlp_engine.load()
+    registry = RecognizerRegistry(supported_languages=["tr"])
+    registry.load_predefined_recognizers(languages=["tr"], nlp_engine=nlp_engine)
+    registry.add_recognizer(TrNationalIdRecognizer())
+    analyzer = AnalyzerEngine(registry=registry, nlp_engine=nlp_engine, supported_languages=["tr"])
+    return lambda text: [(r.start, r.end, r.entity_type) for r in analyzer.analyze(text, language="tr")]
+
+
 def turkish_predictor() -> Callable[[str], list[Span]]:
     analyzer = build_analyzer()
     return lambda text: [(r.start, r.end, r.entity_type) for r in analyzer.analyze(text, language="tr")]
@@ -124,6 +139,7 @@ def main() -> None:
     rows = [json.loads(line) for line in args.data.read_text(encoding="utf-8").splitlines()]
     results = {
         "Presidio (en, varsayılan)": score(rows, baseline_predictor()),
+        "Presidio (tr, hazır tanıyıcılar + TrNationalIdRecognizer)": score(rows, vanilla_turkish_predictor()),
         "Presidio + presidio-tr": score(rows, turkish_predictor()),
     }
     report = to_markdown(results, len(rows), args.data)

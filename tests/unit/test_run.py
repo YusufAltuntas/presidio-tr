@@ -1,4 +1,4 @@
-from benchmark.run import score
+from benchmark.run import score, vanilla_turkish_predictor
 
 ROWS = [
     {
@@ -26,3 +26,9 @@ def test_score_counts_wrong_type_as_masked_but_not_recalled():
 def test_score_counts_unmatched_prediction_as_false_positive():
     counts, _ = score(ROWS, lambda text: [(23, 34, "TR_NATIONAL_ID")])
     assert counts["TR_NATIONAL_ID"].fp == 1
+
+
+def test_vanilla_turkish_predictor_detects_valid_tckn_as_national_id():
+    text = "TC kimlik no 10000000146"
+    spans = vanilla_turkish_predictor()(text)
+    assert any(entity == "TR_NATIONAL_ID" and text[start:end] == "10000000146" for start, end, entity in spans)

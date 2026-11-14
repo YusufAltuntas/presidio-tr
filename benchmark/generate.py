@@ -45,6 +45,7 @@ TEMPLATES = [
     "Kimliğimdeki numarayı yazıyorum: {tckn_typo}",
     "Başvuru formuna {tckn_typo} yazmışım, düzeltebilir misiniz?",  # zor durum: bağlam yok, tasarım gereği kaçar
     # VKN
+    "Firma {vkn} numarasıyla kayıtlı.",  # zor durum: bağlam yok, tasarım gereği kaçar
     "Şirketimizin vergi kimlik numarası {vkn}, faturayı buna kesin.",
     "VKN: {vkn} — {city} Vergi Dairesi.",
     "Vergi numaramız {vkn_typo} olarak görünüyor, kontrol eder misiniz?",
@@ -59,6 +60,7 @@ TEMPLATES = [
     "Telefon: {phone}",
     "{name}, {phone} — {city} şubesi.",
     "Cep numaram {bare_phone}, SMS gelmedi.",
+    "Bana {bare_phone} üzerinden dönebilir misiniz?",  # zor durum: bağlam yok, tasarım gereği kaçar
     "WhatsApp hattımız {phone}.",
     "Acil durumda {phone} arayın.",
     # Karışık
