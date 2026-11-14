@@ -119,6 +119,32 @@ def test_langfuse_never_sees_raw_pii_and_keeps_end_user():
     _assert_langfuse_masked(_langfuse_observations_with_output(user))
 
 
+def test_langfuse_never_sees_raw_pii_for_streaming():
+    user = f"e2e-stream-{time.time_ns()}"
+    text = ""
+    with httpx.stream(
+        "POST",
+        f"{LITELLM}/v1/chat/completions",
+        headers={"Authorization": f"Bearer {_master_key()}"},
+        json={
+            "model": MODEL,
+            "messages": _echo(f"TC kimlik no {TCKN_1}."),
+            "user": user,
+            "temperature": 0,
+            "stream": True,
+        },
+        timeout=60,
+    ) as response:
+        assert response.status_code == 200
+        for line in response.iter_lines():
+            if not line.startswith("data: ") or line == "data: [DONE]":
+                continue
+            for choice in json.loads(line[len("data: ") :]).get("choices", []):
+                text += choice.get("delta", {}).get("content") or ""
+    assert TCKN_1 in text
+    _assert_langfuse_masked(_langfuse_observations_with_output(user))
+
+
 def test_budget_exceeded_key_is_rejected():
     created = httpx.post(
         f"{LITELLM}/key/generate",

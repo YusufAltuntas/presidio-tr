@@ -126,6 +126,8 @@ Plan yazılırken presidio-analyzer 2.2.366 ve LiteLLM 1.109.1 ile bir deneme (s
    (`mode: logging_only`) log kopyasını maskeler; bu girişte `presidio_filter_scope: input` şart (doğrulandı):
    yoksa LiteLLM maskelemeyi canlı cevap nesnesine de uygulayıp kullanıcıya `<TR_NATIONAL_ID>` döndürüyor.
    Langfuse v4 `events_only` modunda v1 `/api/public/traces` kapalı; test `/api/public/v2/observations` kullanır.
+   - Streaming: akışlı yanıt da Langfuse'a ham PII olarak gitmiyor (e2e testi `test_langfuse_never_sees_raw_pii_for_streaming`
+     geçti: ham TCKN yok, `<TR_NATIONAL_ID` etiketi var).
 5. **Fail-closed — kısmen çözüldü.** LiteLLM 1.109.1, `output_parse_pii` açıkken analyzer'dan geçersiz cevap
    gelirse isteği reddediyor. Analyzer'a hiç ulaşılamama durumu e2e testinde doğrulanır. Sunucu desteklenmeyen
    dil için 400 döner, LiteLLM bunu da reddeder.
