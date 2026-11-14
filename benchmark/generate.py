@@ -70,13 +70,13 @@ TEMPLATES = [
     "{date} tarihli {amount} tutarındaki faturanız hazır.",
     "Takip kodu {order_no} ile {city} aktarma merkezinde.",
     "Referans numarası {ref_no} olan talebiniz kapatıldı.",
+    "Hesap hareketi referansı {ref_no} olarak kaydedildi.",
     "Toplam {amount}, ödeme tarihi {date}.",
     "Kampanya kodu {ref_no} {date} tarihine kadar geçerli.",
     # Zor negatifler: bağlam kelimesi var ama sayı PII değil
     "Kimlik doğrulama kodunuz {order_no}, kimseyle paylaşmayın.",
     "Vergi dairesi başvuru numaranız {ref_no}.",
     "Telefon faturanızın numarası {ref_no}, son ödeme {date}.",
-    "Hesap hareketi referansı {ref_no} olarak kaydedildi.",
     "TC Kargo takip numaranız {order_no}.",
 ]
 
