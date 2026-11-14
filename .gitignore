@@ -1,0 +1,21 @@
+# Sırlar
+.env*
+!.env.example
+
+# Python
+__pycache__/
+*.py[cod]
+.venv/
+venv/
+*.egg-info/
+dist/
+build/
+.pytest_cache/
+.ruff_cache/
+
+# Üretilen veri ve çıktılar
+benchmark/data/
+
+# Yerel ayarlar
+.claude/settings.local.json
+.DS_Store
