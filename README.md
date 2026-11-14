@@ -7,9 +7,18 @@ Microsoft'un resmi projesi değildir; topluluk paketidir.
 
 ## Neden
 
-- Presidio'da TC kimlik no ve VKN tanıyıcısı yok.
-- Hazır tanıyıcılar `en` için kayıtlı; `language="tr"` ile IBAN ve telefon da çalışmıyor.
-- `en` ile çalıştırınca Türkçe metindeki her sayı `US_BANK_NUMBER` / `DATE_TIME` gibi yanlış türlerle maskeleniyor.
+Presidio'da `TrNationalIdRecognizer` (yalnızca checksum, varsayılan olarak kapalı) ve `TrLicensePlateRecognizer`
+zaten var. `presidio-tr` şunları ekler:
+
+- VKN tanıyıcısı (upstream'de yok).
+- TCKN, VKN ve IBAN için yazım hatası kademesi: checksum'ı geçmeyen ama yakınında bağlam kelimesi olan değer 0.6 skorla maskelenir.
+- Türkiye'ye özel telefon tanıyıcısı (upstream'deki TR telefon çalışması hâlâ açık bir PR).
+- Türkçe ek toleranslı bağlam eşleştirme ("IBAN'ım", "hesabınız").
+- Gateway demosu ve bulguları (aşağıda).
+
+Varlık adları bilerek upstream ile aynıdır (`TR_NATIONAL_ID`, `IBAN_CODE`, `PHONE_NUMBER`). Varsayılan
+`AnalyzerEngine()` hazır tanıyıcıları yalnızca `en` için kaydeder; Türkçe metni `en` ile çalıştırınca her sayı
+`US_BANK_NUMBER` / `DATE_TIME` gibi yanlış türlerle maskelenir.
 
 ## Benchmark
 
@@ -17,21 +26,28 @@ Microsoft'un resmi projesi değildir; topluluk paketidir.
 |---|---|---|---|---|---|
 | Presidio (en, varsayılan) | TR_NATIONAL_ID | 0.00 | 0.00 | 0.00 | 1.00 |
 | Presidio (en, varsayılan) | TR_TAX_ID | 0.00 | 0.00 | 0.00 | 1.00 |
-| Presidio (en, varsayılan) | IBAN_CODE | 1.00 | 0.83 | 0.91 | 0.84 |
-| Presidio (en, varsayılan) | PHONE_NUMBER | 0.36 | 0.86 | 0.50 | 1.00 |
-| Presidio + presidio-tr | TR_NATIONAL_ID | 0.72 | 0.88 | 0.79 | 0.88 |
-| Presidio + presidio-tr | TR_TAX_ID | 0.85 | 1.00 | 0.92 | 1.00 |
+| Presidio (en, varsayılan) | IBAN_CODE | 1.00 | 0.83 | 0.91 | 0.85 |
+| Presidio (en, varsayılan) | PHONE_NUMBER | 0.34 | 0.88 | 0.49 | 1.00 |
+| Presidio (tr, hazır tanıyıcılar + TrNationalIdRecognizer) | TR_NATIONAL_ID | 1.00 | 0.62 | 0.77 | 0.69 |
+| Presidio (tr, hazır tanıyıcılar + TrNationalIdRecognizer) | TR_TAX_ID | 0.00 | 0.00 | 0.00 | 0.91 |
+| Presidio (tr, hazır tanıyıcılar + TrNationalIdRecognizer) | IBAN_CODE | 1.00 | 0.83 | 0.91 | 0.85 |
+| Presidio (tr, hazır tanıyıcılar + TrNationalIdRecognizer) | PHONE_NUMBER | 0.34 | 0.88 | 0.49 | 0.88 |
+| Presidio + presidio-tr | TR_NATIONAL_ID | 0.77 | 0.85 | 0.81 | 0.85 |
+| Presidio + presidio-tr | TR_TAX_ID | 0.80 | 0.81 | 0.80 | 0.81 |
 | Presidio + presidio-tr | IBAN_CODE | 1.00 | 1.00 | 1.00 | 1.00 |
-| Presidio + presidio-tr | PHONE_NUMBER | 0.91 | 1.00 | 0.95 | 1.00 |
+| Presidio + presidio-tr | PHONE_NUMBER | 0.89 | 0.91 | 0.90 | 0.91 |
 
 | Sistem | Yanlış maskeleme (PII olmayan sayılar) |
 |---|---|
 | Presidio (en, varsayılan) | 1.00 |
+| Presidio (tr, hazır tanıyıcılar + TrNationalIdRecognizer) | 0.51 |
 | Presidio + presidio-tr | 0.41 |
 
-"Maskelenen": türü yanlış da olsa bir tahminle örtülen PII oranı. Veri 1000 sentetik cümledir (Faker `tr_TR` +
-şablonlar, seed 42); bağlam kelimesinin yanında duran PII olmayan sayılar ("Kimlik doğrulama kodunuz ...") de
-içerir. Sonuç dosyası: `benchmark/results/2026-11-14.md`. Yeniden üretmek için:
+`en` satırı, Türkçe kurulumu olmayan bir kullanıcının elde ettiği sonuçtur; `tr` (hazır tanıyıcılar) satırı adil
+taban çizgisidir. "Maskelenen": türü yanlış da olsa bir tahminle örtülen PII oranı. Veri 1000 sentetik cümledir
+(Faker `tr_TR` + şablonlar, seed 42); bağlam kelimesinin yanında duran PII olmayan sayılar ("Kimlik doğrulama
+kodunuz ...") ve bağlamsız zor PII örnekleri de içerir. Sonuç dosyası: `benchmark/results/2026-11-14.md`.
+Yeniden üretmek için:
 
 ```bash
 uv sync --group benchmark && uv run python -m benchmark.generate --n 1000 --seed 42 && uv run python -m benchmark.run
@@ -41,16 +57,18 @@ Düz `uv sync` benchmark grubunun modelini yine kaldırır.
 
 ### Ödünleşim: yanlış maskeleme 0.41
 
-Varsayılan Presidio'da 1.00, `presidio-tr` ile 0.41. Farkın büyük kısmı, bağlam kelimesi yakınında bulunan
-geçersiz checksum'lu sayıları maskeleyen 0.6 skorlu kademeden gelir (aşağıdaki Skorlama bölümü). Bu bilinçli bir
-seçimdir: güvenlik önce gelir, bir hanesi yanlış yazılmış TC kimlik no yine maskelenmelidir. `TR_NATIONAL_ID`
-precision değerinin 0.72 olması da aynı kademeden kaynaklanır; recall'daki kayıp ise tasarım gereği bağlamsız
-ve checksum'ı bozuk numaralardır. Kesinliği tercih ediyorsanız bağlam kademesini skor eşiğiyle kapatın:
+Varsayılan Presidio'da 1.00, hazır tanıyıcılarla `tr`'de 0.51, `presidio-tr` ile 0.41. `presidio-tr`'nin yanlış
+maskelemesinin tamamı, bağlam kelimesi yakınında bulunan geçersiz checksum'lu sayıları maskeleyen 0.6 skorlu
+kademeden gelir (aşağıdaki Skorlama bölümü); `score_threshold=0.7` ile yanlış maskeleme 0.00 olur. Bu bilinçli
+bir seçimdir: güvenlik önce gelir, bir hanesi yanlış yazılmış TC kimlik no yine maskelenmelidir. 0.41 değeri
+çoğunlukla şablon karışımındaki zor negatiflerin payını yansıtır, gerçek trafikteki oranı değil. Kesinliği
+tercih ediyorsanız bağlam kademesini skor eşiğiyle kapatın:
 
 ```python
 analyzer.analyze(text, language="tr", score_threshold=0.7)
 ```
 
+Eşikte recall değerleri: `TR_NATIONAL_ID` 0.62, `TR_TAX_ID` 0.60, `IBAN_CODE` 0.83, `PHONE_NUMBER` 0.77.
 Eşikli sürüm için ayrı bir benchmark satırı yoktur.
 
 ## Kurulum ve kullanım
@@ -69,8 +87,9 @@ analyzer = build_analyzer()
 analyzer.analyze("TC kimlik no 10000000146", language="tr")
 ```
 
-Var olan bir registry'ye eklemek için `add_turkish_recognizers(registry)`. Boş (blank) spaCy `tr` pipeline'ı
-kullanılır, model indirmek gerekmez.
+`add_turkish_recognizers(registry)` yalnızca `tr` için kurulmuş, Türkçe NLP motorlu bir registry/analyzer ile
+çalışır; varsayılan bir `en` registry'sine eklemek işe yaramaz. Doğru kurulum için `build_analyzer()` kaynağına
+bakın (`src/presidio_tr/__init__.py`). Boş (blank) spaCy `tr` pipeline'ı kullanılır, model indirmek gerekmez.
 
 ## Skorlama
 
@@ -98,7 +117,8 @@ değiştirmez.
 ## Gateway demosu
 
 LiteLLM `v1.109.1` içindeki Presidio guardrail'ine `presidio-tr` takılır; LLM sağlayıcısı yalnızca maskeli metni
-görür, cevapta etiketler geri açılır, Langfuse'a yalnızca maskeli metin gider.
+görür, cevapta etiketler geri açılır, analyzer ve anonymizer sağlıklıyken Langfuse'a yalnızca maskeli metin gider
+(aşağıdaki "Sızıntı garantisinin sınırı" notuna bakın).
 
 ```text
 istemci ──► LiteLLM :4000 ──(pre-call)──► presidio-tr analyzer ──► presidio anonymizer
@@ -125,6 +145,9 @@ Beklenen çıktı: `TC kimlik no 10000000146, telefon 0532 123 45 67.` (değerle
 Yayınlanan portlar yalnızca `127.0.0.1`'e bağlıdır. LiteLLM başladıktan sonra yaklaşık 15 sn içinde
 (`/health/liveliness`) cevap vermeye başlar. Durdurmak için: `docker compose -f deploy/docker-compose.yml down`.
 
+Hata davranışı: analyzer erişilemezse istek reddedilir (fail-closed; e2e testle doğrulandı). Bu davranış
+guardrail'de `output_parse_pii`'nin açık olmasına dayanır.
+
 Demo bulguları (LiteLLM 1.109.1):
 
 - Guardrail'de `presidio_filter_scope: input` şarttır. Varsayılan `both`, `output_parse_pii` ile geri açılan
@@ -137,7 +160,7 @@ Demo bulguları (LiteLLM 1.109.1):
 ## Testler ve geliştirme
 
 ```bash
-uv run pytest                                                 # birim testler (68)
+uv run pytest                                                 # birim testler (79)
 set -a && . deploy/.env && set +a && uv run pytest -m e2e     # uçtan uca (7)
 ```
 
@@ -147,6 +170,13 @@ Pre-commit: gitleaks + ruff (`uvx pre-commit install`). CI her push'ta ruff ve b
 ## Bilinen sınırlamalar
 
 - Bağlamsız ve checksum'ı bozuk TC kimlik no maskelenmez; bağlamsız VKN de maskelenmez.
+- Desteklenmeyen yazımlar: boşluklu TCKN (`100 000 001 46`), `TR` sonrası boşluklu IBAN (`TR 33 …`), 0850/0800
+  numaraları, `+` işaretsiz `90` önekli telefon (`905321234567`).
+- Bağlam eşleştirmesi komşu etiketlere taşabilir: bir etiketin bağlam kelimesi yanındaki başka bir değeri de
+  0.6 kademesine sokabilir.
+- Sızıntı garantisinin sınırı: LiteLLM'in logging hook'u bloklamaz. Çağrıdan sonra, loglamadan önce Presidio
+  hata verirse loglanan kopya maskesiz kalabilir (log için fail-open); yani "Langfuse yalnızca maskeli metin görür"
+  analyzer/anonymizer sağlıklıyken geçerlidir.
 - İsim ve adres yok (NER, v2).
 - Model etiketi bozarsa değer geri açılamaz. `deploy/measure_unmask.py` ile ölçüm (gpt-4.1-mini, 2026-11-14):
   10 görev: 9 geri açıldı, 0 etiket açılamadan kaldı, 1 değer modelce düşürüldü/değiştirildi.

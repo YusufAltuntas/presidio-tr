@@ -9,8 +9,11 @@ Microsoft Presidio için Türkçe kişisel veri (PII) tanıyıcı paketi. LiteLL
 guardrail'ine takılarak, Türkçe metindeki kişisel verilerin LLM sağlayıcısına gitmeden maskelenmesini ve
 cevapta geri açılmasını sağlar. Etkisi sentetik Türkçe benchmark ile ölçülür.
 
-**Neden:** Presidio'da TC kimlik ve VKN tanıyıcısı yok, IBAN tanıyıcısı ülkeye özel değil, Türk telefonu
-henüz açık PR'da. Geri alınabilir maskeleme (`output_parse_pii`) ve streaming desteği LiteLLM'de zaten var;
+**Neden:** Presidio'da `TrNationalIdRecognizer` (yalnızca checksum, varsayılan olarak kapalı) ve
+`TrLicensePlateRecognizer` var; VKN tanıyıcısı yok, Türk telefonu henüz açık PR'da. `presidio-tr` VKN'yi,
+TCKN/VKN/IBAN için yazım hatası kademesini (checksum geçersiz + bağlam → 0.6), Türkiye'ye özel telefonu ve
+Türkçe ek toleranslı bağlam eşleştirmeyi ekler. Varsayılan `AnalyzerEngine()` hazır tanıyıcıları yalnızca `en`
+için kaydeder. Geri alınabilir maskeleme (`output_parse_pii`) ve streaming desteği LiteLLM'de zaten var;
 yeniden yazılmaz, Türkçe veriyle çalıştığı testlerle kanıtlanır.
 
 Paket Microsoft'un resmi projesi değildir; README'nin tepesinde bu açıkça yazar.
@@ -19,7 +22,7 @@ Paket Microsoft'un resmi projesi değildir; README'nin tepesinde bu açıkça ya
 
 **v1'de:**
 - Tanıyıcılar: TC kimlik no, VKN, TR IBAN, TR telefon.
-- Benchmark: varsayılan Presidio ile Presidio + `presidio-tr` karşılaştırması.
+- Benchmark: varsayılan Presidio, hazır tanıyıcılı `tr` Presidio ve Presidio + `presidio-tr` karşılaştırması.
 - Demo: `docker compose` ile LiteLLM + Presidio (paketli imaj) + Langfuse.
 - Anahtar başı bütçe ve end-user attribution — yalnızca LiteLLM config'i, kod yok.
 
@@ -57,7 +60,7 @@ presidio-tr/
 | `validators` | "Bu numara geçerli mi?" — TCKN ve VKN checksum, TR IBAN uzunluk + mod-97 | Hiçbir şey |
 | `recognizers` | Regex ile aday bulur, validator + bağlam ile skorlar | Presidio, `validators`, `context` |
 | `context` | Türkçe bağlam kelimeleri ve ek toleranslı eşleştirme | Hiçbir şey |
-| `benchmark` | Veri üretir, iki analyzer'ı karşılaştırır | Paket (dışarıdan) |
+| `benchmark` | Veri üretir, üç sistemi karşılaştırır | Paket (dışarıdan) |
 | `deploy` | Gateway demosu | Paketin Docker imajı |
 
 Paket, benchmark'tan ve deploy'dan habersizdir.
@@ -68,7 +71,7 @@ Paket, benchmark'tan ve deploy'dan habersizdir.
 |---|---|---|
 | `TcKimlikRecognizer` | `TR_NATIONAL_ID` | |
 | `VknRecognizer` | `TR_TAX_ID` | |
-| `TrIbanRecognizer` | `IBAN_CODE` | Presidio'nun adıyla aynı, mevcut config'lerle uyumlu kalsın diye. Presidio'nun hazır tanıyıcıları `en` için kayıtlı; `language=tr` ile çalışırken IBAN tanıyıcısı hiç devreye girmez, bu yüzden TR'ye özel (26 karakter, `TR` öneki, mod-97) bir sürüm `tr` için kaydedilir. |
+| `TrIbanRecognizer` | `IBAN_CODE` | Presidio'nun adıyla aynı, mevcut config'lerle uyumlu kalsın diye. Varsayılan `AnalyzerEngine()` hazır tanıyıcıları yalnızca `en` için kaydeder; TR'ye özel (26 karakter, `TR` öneki, mod-97) sürüm yazım hatası kademesini de ekler. |
 | `TrPhoneRecognizer` | `PHONE_NUMBER` | Aynı gerekçe. |
 
 ### Skorlama kuralı
@@ -128,6 +131,11 @@ Plan yazılırken presidio-analyzer 2.2.366 ve LiteLLM 1.109.1 ile bir deneme (s
    Langfuse v4 `events_only` modunda v1 `/api/public/traces` kapalı; test `/api/public/v2/observations` kullanır.
    - Streaming: akışlı yanıt da Langfuse'a ham PII olarak gitmiyor (e2e testi `test_langfuse_never_sees_raw_pii_for_streaming`
      geçti: ham TCKN yok, `<TR_NATIONAL_ID` etiketi var).
+   - Filter scope mekanizması: `both` ile LiteLLM ek bir `mask_output_callback` (`apply_to_output=True`) yaratır;
+     bunun `_presidio_output_mode("logging_only")` sonucu `post_call`'a çözülür ve canlı cevabı maskeler.
+     `input` ile bu callback yaratılmaz; logging_only callback'inin `async_logging_hook`'u yine de log kopyasını maskeler.
+   - Fail-open (log): LiteLLM'in logging hook'u bloklamaz; çağrıdan sonra, loglamadan önce Presidio hata verirse
+     loglanan kopya maskesiz kalabilir. "Langfuse yalnızca maskeli metin görür" analyzer/anonymizer sağlıklıyken geçerlidir.
 5. **Fail-closed — kısmen çözüldü.** LiteLLM 1.109.1, `output_parse_pii` açıkken analyzer'dan geçersiz cevap
    gelirse isteği reddediyor. Analyzer'a hiç ulaşılamama durumu e2e testinde doğrulanır. Sunucu desteklenmeyen
    dil için 400 döner, LiteLLM bunu da reddeder.
@@ -160,8 +168,11 @@ Plan yazılırken presidio-analyzer 2.2.366 ve LiteLLM 1.109.1 ile bir deneme (s
 - Negatif sayılar checksum'a göre süzülür (sipariş no geçerli TCKN, referans no geçerli VKN olamaz); aksi halde
   gerçek PII "PII değil" diye etiketlenir.
 - Tüm değerler (tarih dahil) seed'li `random.Random`'dan üretilir; aynı seed her gün aynı veriyi verir.
-- Karşılaştırma: (a) varsayılan Presidio — `language=en` ve hazır tanıyıcılarla, yani Türkçe desteği olmayan
-  bir kullanıcının elinde olan; (b) Presidio + `presidio-tr`, `language=tr`. Varlık türü başına P/R/F1.
+- Karşılaştırma, üç sistem: (a) varsayılan Presidio — `language=en` ve hazır tanıyıcılarla, yani Türkçe
+  kurulumu olmayan bir kullanıcının elinde olan; (b) adil taban çizgisi — `language=tr`, Presidio'nun hazır
+  tanıyıcıları ve kendi `TrNationalIdRecognizer`'ı (varsayılan kapalı, elle eklenir); (c) Presidio +
+  `presidio-tr`, `language=tr`. Varlık türü başına P/R/F1.
+- Bağlamsız zor PII şablonları (bağlamsız VKN, öneksiz telefon) bilerek eklenir; recall şablon bağlamıyla şişmesin.
 - Tür gözetmeyen "maskelenen" oranı da raporlanır: varsayılan Presidio TC kimliği yanlış türle
   (`US_BANK_NUMBER`, `DATE_TIME`…) yakalayıp yine maskeleyebilir. Bu yüzden asıl karşılaştırma
   **yanlış maskeleme** oranıdır: PII olmayan sayıların (sipariş no, referans no) maskelenme oranı.

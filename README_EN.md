@@ -7,9 +7,18 @@ This is not an official Microsoft project; it is a community package.
 
 ## Why
 
-- Presidio has no recognizer for the Turkish national ID (TCKN) or tax ID (VKN).
-- The built-in recognizers are registered for `en`; with `language="tr"` even IBAN and phone do not run.
-- Running with `en` on Turkish text masks every number under wrong types such as `US_BANK_NUMBER` / `DATE_TIME`.
+Presidio already ships `TrNationalIdRecognizer` (checksum only, disabled by default) and
+`TrLicensePlateRecognizer`. `presidio-tr` adds:
+
+- A VKN (tax ID) recognizer (none upstream).
+- A typo tier for TCKN, VKN and IBAN: a checksum-invalid value with a context word nearby is masked at score 0.6.
+- A Turkey-specific phone recognizer (the upstream TR phone recognizer is still an open PR).
+- Turkish suffix-tolerant context matching ("IBAN'ım", "hesabınız").
+- The gateway demo and its findings (below).
+
+Entity names intentionally match upstream (`TR_NATIONAL_ID`, `IBAN_CODE`, `PHONE_NUMBER`). The default
+`AnalyzerEngine()` registers the built-in recognizers for `en` only; running Turkish text through `en` masks every
+number under wrong types such as `US_BANK_NUMBER` / `DATE_TIME`.
 
 ## Benchmark
 
@@ -17,21 +26,28 @@ This is not an official Microsoft project; it is a community package.
 |---|---|---|---|---|---|
 | Presidio (en, default) | TR_NATIONAL_ID | 0.00 | 0.00 | 0.00 | 1.00 |
 | Presidio (en, default) | TR_TAX_ID | 0.00 | 0.00 | 0.00 | 1.00 |
-| Presidio (en, default) | IBAN_CODE | 1.00 | 0.83 | 0.91 | 0.84 |
-| Presidio (en, default) | PHONE_NUMBER | 0.36 | 0.86 | 0.50 | 1.00 |
-| Presidio + presidio-tr | TR_NATIONAL_ID | 0.72 | 0.88 | 0.79 | 0.88 |
-| Presidio + presidio-tr | TR_TAX_ID | 0.85 | 1.00 | 0.92 | 1.00 |
+| Presidio (en, default) | IBAN_CODE | 1.00 | 0.83 | 0.91 | 0.85 |
+| Presidio (en, default) | PHONE_NUMBER | 0.34 | 0.88 | 0.49 | 1.00 |
+| Presidio (tr, built-in recognizers + TrNationalIdRecognizer) | TR_NATIONAL_ID | 1.00 | 0.62 | 0.77 | 0.69 |
+| Presidio (tr, built-in recognizers + TrNationalIdRecognizer) | TR_TAX_ID | 0.00 | 0.00 | 0.00 | 0.91 |
+| Presidio (tr, built-in recognizers + TrNationalIdRecognizer) | IBAN_CODE | 1.00 | 0.83 | 0.91 | 0.85 |
+| Presidio (tr, built-in recognizers + TrNationalIdRecognizer) | PHONE_NUMBER | 0.34 | 0.88 | 0.49 | 0.88 |
+| Presidio + presidio-tr | TR_NATIONAL_ID | 0.77 | 0.85 | 0.81 | 0.85 |
+| Presidio + presidio-tr | TR_TAX_ID | 0.80 | 0.81 | 0.80 | 0.81 |
 | Presidio + presidio-tr | IBAN_CODE | 1.00 | 1.00 | 1.00 | 1.00 |
-| Presidio + presidio-tr | PHONE_NUMBER | 0.91 | 1.00 | 0.95 | 1.00 |
+| Presidio + presidio-tr | PHONE_NUMBER | 0.89 | 0.91 | 0.90 | 0.91 |
 
 | System | Over-masking (non-PII numbers) |
 |---|---|
 | Presidio (en, default) | 1.00 |
+| Presidio (tr, built-in recognizers + TrNationalIdRecognizer) | 0.51 |
 | Presidio + presidio-tr | 0.41 |
 
-"Masked": share of PII covered by some prediction, even of the wrong type. The data is 1000 synthetic sentences
-(Faker `tr_TR` + templates, seed 42); it includes non-PII numbers placed next to context words ("Kimlik doğrulama
-kodunuz ..." / "Your ID verification code ..."). Results file: `benchmark/results/2026-11-14.md`. To reproduce:
+The `en` row is what a user gets without any Turkish setup; the `tr` (built-in recognizers) row is the fair
+baseline. "Masked": share of PII covered by some prediction, even of the wrong type. The data is 1000 synthetic
+sentences (Faker `tr_TR` + templates, seed 42); it includes non-PII numbers placed next to context words ("Kimlik
+doğrulama kodunuz ..." / "Your ID verification code ...") and context-free hard PII cases. Results file:
+`benchmark/results/2026-11-14.md`. To reproduce:
 
 ```bash
 uv sync --group benchmark && uv run python -m benchmark.generate --n 1000 --seed 42 && uv run python -m benchmark.run
@@ -41,16 +57,18 @@ Plain `uv sync` removes the benchmark group's model again.
 
 ### Trade-off: over-masking 0.41
 
-1.00 for default Presidio versus 0.41 for `presidio-tr`. Most of the gap comes from the 0.6 context tier, which
-masks checksum-invalid numbers that sit near a context word (see Scoring below). This is deliberate: security
-comes first, and a national ID with one mistyped digit should still be masked. The `TR_NATIONAL_ID` precision of
-0.72 comes from the same tier; the recall miss is the by-design case of a checksum-invalid number with no context.
-If you prefer precision, drop the context tier with a score threshold:
+1.00 for default Presidio, 0.51 for `tr` with built-in recognizers, 0.41 for `presidio-tr`. All of the
+`presidio-tr` over-masking comes from the 0.6 context tier, which masks checksum-invalid numbers that sit near a
+context word (see Scoring below); with `score_threshold=0.7` over-masking drops to 0.00. This is deliberate:
+security comes first, and a national ID with one mistyped digit should still be masked. The 0.41 figure mostly
+reflects the share of hard negatives in the template mix, not a rate for real traffic. If you prefer precision,
+drop the context tier with a score threshold:
 
 ```python
 analyzer.analyze(text, language="tr", score_threshold=0.7)
 ```
 
+Recall at that threshold: `TR_NATIONAL_ID` 0.62, `TR_TAX_ID` 0.60, `IBAN_CODE` 0.83, `PHONE_NUMBER` 0.77.
 There is no separate benchmark row for the thresholded variant.
 
 ## Install and usage
@@ -69,8 +87,9 @@ analyzer = build_analyzer()
 analyzer.analyze("TC kimlik no 10000000146", language="tr")
 ```
 
-To add the recognizers to an existing registry, use `add_turkish_recognizers(registry)`. A blank spaCy `tr`
-pipeline is used, so no model download is needed.
+`add_turkish_recognizers(registry)` only works with a registry/analyzer set up for `tr` with a Turkish NLP engine;
+adding it to a default `en` registry does not help. See the `build_analyzer()` source (`src/presidio_tr/__init__.py`)
+for the correct setup. A blank spaCy `tr` pipeline is used, so no model download is needed.
 
 ## Scoring
 
@@ -97,7 +116,8 @@ Recognizers get no Presidio `context` parameter; Presidio's lemma-based score en
 ## Gateway demo
 
 `presidio-tr` plugs into the Presidio guardrail built into LiteLLM `v1.109.1`. The LLM provider sees only masked
-text, placeholders are restored in the answer, and Langfuse receives only masked text.
+text, placeholders are restored in the answer, and, while the analyzer and anonymizer are healthy, Langfuse
+receives only masked text (see "Leak-guarantee limit" under Known limitations).
 
 ```text
 client ──► LiteLLM :4000 ──(pre-call)──► presidio-tr analyzer ──► presidio anonymizer
@@ -124,6 +144,9 @@ Expected output: `TC kimlik no 10000000146, telefon 0532 123 45 67.` (values res
 Published ports are bound to `127.0.0.1` only. LiteLLM needs about 15 s after start before it answers
 (`/health/liveliness`). To stop: `docker compose -f deploy/docker-compose.yml down`.
 
+Failure behavior: if the analyzer is unreachable the request is rejected (fail-closed; verified by an e2e test).
+This relies on `output_parse_pii` being enabled on the guardrail.
+
 Demo findings (LiteLLM 1.109.1):
 
 - `presidio_filter_scope: input` is required on the guardrail. The default `both` re-masks values already
@@ -137,7 +160,7 @@ Demo findings (LiteLLM 1.109.1):
 ## Tests and development
 
 ```bash
-uv run pytest                                                 # unit tests (68)
+uv run pytest                                                 # unit tests (79)
 set -a && . deploy/.env && set +a && uv run pytest -m e2e     # end-to-end (7)
 ```
 
@@ -147,6 +170,12 @@ Pre-commit: gitleaks + ruff (`uvx pre-commit install`). CI runs ruff and the uni
 ## Known limitations
 
 - A checksum-invalid national ID with no context is not masked; neither is a VKN without context.
+- Unsupported forms: spaced TCKN (`100 000 001 46`), IBAN with a space after `TR` (`TR 33 …`), 0850/0800
+  numbers, phones with a `90` prefix without `+` (`905321234567`).
+- Context matching can leak across neighbouring labels: one label's context word can push a nearby value into the 0.6 tier.
+- Leak-guarantee limit: LiteLLM's logging hook is non-blocking. If Presidio fails between the call and logging,
+  the logged copy can be unmasked (fail-open for logs); "Langfuse sees only masked text" holds while the
+  analyzer/anonymizer are healthy.
 - No names or addresses (NER, v2).
 - If the model corrupts a placeholder, the value cannot be restored. Measured with `deploy/measure_unmask.py`
   (gpt-4.1-mini, 2026-11-14): 10 tasks: 9 restored, 0 placeholders left unrestored, 1 value dropped or altered by the model.
