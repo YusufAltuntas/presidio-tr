@@ -20,7 +20,8 @@ def _run(recognizer, text):
         (TcKimlikRecognizer(), "Numaram 10000000146.", [("10000000146", VALID_SCORE)]),
         (TcKimlikRecognizer(), "TC kimlik no: 10000000147", [("10000000147", CONTEXT_SCORE)]),
         (TcKimlikRecognizer(), "Sipariş no: 10000000147", []),
-        (VknRecognizer(), "Firma 1234567890 ile kayıtlı.", [("1234567890", VALID_SCORE)]),
+        (VknRecognizer(), "Firma 1234567890 ile kayıtlı.", []),
+        (VknRecognizer(), "VKN: 1234567890", [("1234567890", VALID_SCORE)]),
         (VknRecognizer(), "Vergi no 1234567891", [("1234567891", CONTEXT_SCORE)]),
         (VknRecognizer(), "Referans 1234567891", []),
         (

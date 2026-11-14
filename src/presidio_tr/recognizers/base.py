@@ -15,6 +15,8 @@ class TurkishPatternRecognizer(PatternRecognizer):
 
     Doğrulamadan geçen aday yüksek skor alır; geçemeyen ama yakınında bağlam
     kelimesi olan aday orta skor alır; ikisi de yoksa aday atılır.
+    `requires_context=True` ise bağlam kelimesi olmayan aday doğrulamadan
+    geçse bile atılır (zayıf checksum'lı kimlikler için).
     """
 
     def __init__(
@@ -23,8 +25,11 @@ class TurkishPatternRecognizer(PatternRecognizer):
         patterns: list[Pattern],
         validator: Callable[[str], bool],
         context_stems: tuple[str, ...],
+        *,
+        requires_context: bool = False,
     ) -> None:
         self._validator = validator
+        self._requires_context = requires_context
         self._context_stems = context_stems
         super().__init__(
             supported_entity=entity,
@@ -37,9 +42,12 @@ class TurkishPatternRecognizer(PatternRecognizer):
         kept = []
         for result in super().analyze(text, entities, nlp_artifacts, regex_flags):
             candidate = text[result.start : result.end]
+            near_context = has_context(text, result.start, result.end, self._context_stems)
+            if self._requires_context and not near_context:
+                continue
             if self._validator(candidate):
                 result.score = VALID_SCORE
-            elif has_context(text, result.start, result.end, self._context_stems):
+            elif near_context:
                 result.score = CONTEXT_SCORE
             else:
                 continue

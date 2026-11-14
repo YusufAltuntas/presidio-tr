@@ -19,7 +19,7 @@ class TcKimlikRecognizer(TurkishPatternRecognizer):
 
 class VknRecognizer(TurkishPatternRecognizer):
     def __init__(self) -> None:
-        super().__init__("TR_TAX_ID", [Pattern("vkn", VKN_REGEX, 0.5)], vkn_valid, VKN_STEMS)
+        super().__init__("TR_TAX_ID", [Pattern("vkn", VKN_REGEX, 0.5)], vkn_valid, VKN_STEMS, requires_context=True)
 
 
 class TrIbanRecognizer(TurkishPatternRecognizer):
