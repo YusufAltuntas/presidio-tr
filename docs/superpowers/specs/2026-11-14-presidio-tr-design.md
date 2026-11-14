@@ -34,15 +34,19 @@ presidio-tr/
 │   ├── validators.py        # saf fonksiyonlar, Presidio bağımlılığı yok
 │   ├── recognizers/         # TcKimlikRecognizer, VknRecognizer, TrIbanRecognizer, TrPhoneRecognizer
 │   ├── context.py           # Türkçe bağlam kelimeleri
+│   ├── server.py            # Presidio analyzer HTTP API'siyle uyumlu /analyze (extra: server)
 │   └── __init__.py          # add_turkish_recognizers(registry), build_analyzer()
 ├── benchmark/
+│   ├── synth.py             # checksum'ı geçerli/geçersiz sentetik değer üreticileri
 │   ├── generate.py          # Faker('tr_TR') + şablonlar → etiketli JSONL (sabit seed)
-│   ├── run.py               # varlık türü başına precision / recall / F1
+│   ├── run.py               # varlık türü başına precision / recall / F1 + yanlış maskeleme
 │   └── results/             # <YYYY-MM-DD>.md — commit'lenir
 ├── deploy/
-│   ├── docker-compose.yml
-│   ├── analyzer.Dockerfile  # presidio-analyzer + presidio-tr
-│   └── litellm-config.yaml
+│   ├── docker-compose.yml   # Langfuse'un resmi compose'unu `include` eder
+│   ├── langfuse/            # Langfuse'un resmi docker-compose.yml'i, sabit sürümden kopya
+│   ├── analyzer.Dockerfile  # presidio-tr[server]
+│   ├── litellm-config.yaml
+│   └── measure_unmask.py    # model etiketi bozma oranı ölçümü
 └── tests/
     ├── unit/
     └── e2e/                 # yalnızca `pytest -m e2e` ile, compose ayaktayken
@@ -96,23 +100,29 @@ Bütçe: virtual key'de `max_budget`. Attribution: `user` alanı Langfuse'a etik
 - **Presidio erişilemezse istek reddedilir (fail-closed).** Maskesiz veri sağlayıcıya gitmez.
 - **Model etiketi bozarsa** (ör. etiketi kendi cümlesiyle yeniden yazarsa) geri açma başarısız olur ve
   kullanıcı etiketi görür. Sızıntı değil, kullanılabilirlik sorunu: README'de bilinen sınırlama olarak yazılır,
-  oranı e2e testte ölçülür.
+  oranı `deploy/measure_unmask.py` ile ölçülür.
 
-## Önce doğrulanacak riskler
+## Riskler
 
-Uygulama planının ilk adımları bunlar; sonuçlarına göre tasarım güncellenir.
+Plan yazılırken presidio-analyzer 2.2.366 ve LiteLLM 1.109.1 ile bir deneme (spike) yapıldı.
 
-1. **Türkçe NLP motoru.** Presidio dil başına NLP motoru ister; spaCy'nin resmi Türkçe modeli yok.
-   v1 tanıyıcıları regex tabanlı olduğu için hafif bir motor yeter: `turkish-nlp-suite` spaCy modeli ya da
-   blank pipeline — hangisi çalışırsa.
-2. **Ekli bağlam kelimeleri.** Presidio bağlamı lemma ile eşleştirir; "IBAN'ımı", "hesabıma" gibi çekimler
-   kaçabilir. Ek toleranslı eşleştirme gerekir; etkisi benchmark'ta ayrıca ölçülür.
-3. **Aynı türden iki değer.** LiteLLM, metindeki iki farklı TC kimliğe ayrı etiket veriyor mu? Vermiyorsa
-   geri açma karışır.
-4. **Langfuse'a ne gidiyor.** Maskeli mi, orijinal mi loglanıyor? Orijinalse config ile kapatılır.
-5. **Fail-closed.** LiteLLM'in Presidio erişilemezken varsayılan davranışı kontrol edilir, gerekiyorsa ayarlanır.
-6. **Bilinen LiteLLM hatası.** Anthropic native yolunda `output_parse_pii` streaming/non-streaming hatası
-   bildirilmiş (BerriAI/litellm#22821). Demo OpenAI-uyumlu yolla kurulur; hata hâlâ varsa belgelenir.
+1. **Türkçe NLP motoru — çözüldü.** `SpacyNlpEngine` alt sınıfı `spacy.blank("tr")` yükler; model indirmek
+   gerekmez. v1 tanıyıcıları NLP çıktısı kullanmaz.
+2. **Ekli bağlam kelimeleri — çözüldü, tasarım değişti.** Blank pipeline'da lemma boş ve "IBAN'ımı" tek token
+   kalıyor; Presidio'nun lemma tabanlı bağlam güçlendirmesi Türkçede çalışmaz. Bu yüzden bağlam kontrolü
+   tanıyıcının içinde yapılır: eşleşmenin çevresindeki kelimeler, Türkçe küçük harfe çevrilip kök önekiyle
+   karşılaştırılır. Ünsüz yumuşaması için kökün iki hali de listelenir (`hesap`/`hesab`, `kimlik`/`kimliğ`).
+   Türkçe küçültme kısaltmaları bozar ("IBAN" → "ıban"), bu yüzden hem Türkçe hem standart küçültme denenir.
+   Tanıyıcılara Presidio `context` verilmez, böylece Presidio'nun güçlendiricisi devreye girmez.
+3. **Aynı türden iki değer — çözüldü.** LiteLLM etiketleri kendisi numaralıyor (`<TR_NATIONAL_ID_1>`,
+   `<TR_NATIONAL_ID_2>`); e2e testi yine de doğrular.
+4. **Langfuse'a ne gidiyor — açık.** E2E testi kontrol eder. Ham PII görülürse ikinci bir guardrail
+   `mode: logging_only` ile log kopyası maskelenir.
+5. **Fail-closed — kısmen çözüldü.** LiteLLM 1.109.1, `output_parse_pii` açıkken analyzer'dan geçersiz cevap
+   gelirse isteği reddediyor. Analyzer'a hiç ulaşılamama durumu e2e testinde doğrulanır. Sunucu desteklenmeyen
+   dil için 400 döner, LiteLLM bunu da reddeder.
+6. **Bilinen LiteLLM hatası — açık.** Anthropic native yolunda `output_parse_pii` hatası bildirilmiş
+   (BerriAI/litellm#22821). Demo OpenAI-uyumlu yolla kurulur.
 
 ## Test
 
@@ -136,6 +146,10 @@ Uygulama planının ilk adımları bunlar; sonuçlarına göre tasarım güncell
 - Bilerek: hatalı yazılmış numaralar, PII'ye benzeyen ama olmayan sayılar (sipariş no, tutar, tarih).
 - Karşılaştırma: (a) varsayılan Presidio — `language=en` ve hazır tanıyıcılarla, yani Türkçe desteği olmayan
   bir kullanıcının elinde olan; (b) Presidio + `presidio-tr`, `language=tr`. Varlık türü başına P/R/F1.
+- Tür gözetmeyen "maskelenen" oranı da raporlanır: varsayılan Presidio TC kimliği yanlış türle
+  (`US_BANK_NUMBER`, `DATE_TIME`…) yakalayıp yine maskeleyebilir. Bu yüzden asıl karşılaştırma
+  **yanlış maskeleme** oranıdır: PII olmayan sayıların (sipariş no, referans no) maskelenme oranı.
+  Veri satırı bu sayıları `negatives` alanında taşır.
 - Sonuç `benchmark/results/<YYYY-MM-DD>.md`; README tablosu buradan.
 - Üretilen veri commit'lenmez (`benchmark/data/` gitignore'da); script + sabit seed commit'lenir.
 
