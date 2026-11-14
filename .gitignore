@@ -16,6 +16,7 @@ build/
 # Üretilen veri ve çıktılar
 benchmark/data/
 
-# Yerel ayarlar
+# Yerel ayarlar ve yalnızca yerelde tutulan dokümanlar
 .claude/settings.local.json
+docs/superpowers/plans/
 .DS_Store

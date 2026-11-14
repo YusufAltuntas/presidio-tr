@@ -1,7 +1,7 @@
 # presidio-tr — Tasarım
 
 > Bu doküman `presidio-tr` v1'in **ne yapacağının ve neden böyle tasarlandığının** sahibidir.
-> Uygulama adımları ayrı plan dokümanında yaşar.
+> Uygulama planı yalnızca yerelde tutulur (`docs/superpowers/plans/`, git dışı).
 
 ## Amaç
 
