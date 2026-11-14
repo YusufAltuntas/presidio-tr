@@ -1,0 +1,9 @@
+.git
+.venv
+.superpowers
+.ruff_cache
+.pytest_cache
+**/__pycache__
+benchmark/data
+deploy/.env*
+!deploy/.env.example
