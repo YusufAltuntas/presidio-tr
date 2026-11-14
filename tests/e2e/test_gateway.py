@@ -84,12 +84,11 @@ def test_two_values_of_same_type_are_restored_in_order():
     assert content.index(TCKN_1) < content.index(TCKN_2)
 
 
-def test_langfuse_never_sees_raw_pii_and_keeps_end_user():
-    user = f"e2e-{time.time_ns()}"
-    _content(_chat(_echo(f"TC kimlik no {TCKN_1}."), user=user))
+def _langfuse_observations_with_output(user: str) -> list[dict]:
+    """Langfuse'ta bu kullanıcıya ait, en az bir tanesi çıktısı (generation) olan gözlemleri bekler (en çok 120 sn)."""
     deadline = time.time() + 120
     observations: list[dict] = []
-    while time.time() < deadline and not observations:
+    while time.time() < deadline:
         # Langfuse v4 "events_only" modunda v1 /traces uçları kapalı; v2 observations ucu kullanılır.
         response = httpx.get(
             f"{LANGFUSE}/api/public/v2/observations",
@@ -98,10 +97,26 @@ def test_langfuse_never_sees_raw_pii_and_keeps_end_user():
             timeout=10,
         )
         observations = response.json().get("data", []) if response.status_code == 200 else []
-        if not observations:
-            time.sleep(3)
-    assert observations, "Langfuse'ta bu kullanıcıya ait iz bulunamadı (attribution ya da callback çalışmıyor)"
-    assert TCKN_1 not in json.dumps(observations, ensure_ascii=False)
+        if any(o.get("output") is not None for o in observations):
+            return observations
+        time.sleep(3)
+    pytest.fail(
+        "Langfuse'ta bu kullanıcıya ait çıktılı gözlem bulunamadı (attribution ya da callback çalışmıyor): "
+        f"{len(observations)} gözlem"
+    )
+
+
+def _assert_langfuse_masked(observations: list[dict]) -> None:
+    serialized = json.dumps(observations, ensure_ascii=False)
+    assert TCKN_1 not in serialized
+    # Pozitif kontrol: içerik gerçekten loglandı ve maskeli etiketle geldi (boş geçme olmasın).
+    assert "<TR_NATIONAL_ID" in serialized
+
+
+def test_langfuse_never_sees_raw_pii_and_keeps_end_user():
+    user = f"e2e-{time.time_ns()}"
+    _content(_chat(_echo(f"TC kimlik no {TCKN_1}."), user=user))
+    _assert_langfuse_masked(_langfuse_observations_with_output(user))
 
 
 def test_budget_exceeded_key_is_rejected():
