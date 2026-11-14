@@ -171,7 +171,7 @@ Pre-commit: gitleaks + ruff (`uvx pre-commit install`). CI runs ruff and the uni
 
 - A checksum-invalid national ID with no context is not masked; neither is a VKN without context.
 - Unsupported forms: spaced TCKN (`100 000 001 46`), IBAN with a space after `TR` (`TR 33 …`), 0850/0800
-  numbers, phones with a `90` prefix without `+` (`905321234567`).
+  numbers.
 - Context matching can leak across neighbouring labels: one label's context word can push a nearby value into the 0.6 tier.
 - Leak-guarantee limit: LiteLLM's logging hook is non-blocking. If Presidio fails between the call and logging,
   the logged copy can be unmasked (fail-open for logs); "Langfuse sees only masked text" holds while the

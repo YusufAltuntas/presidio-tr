@@ -38,6 +38,7 @@ def _run(recognizer, text):
         ),
         (TrPhoneRecognizer(), "Arayın: +90 532 123 45 67", [("+90 532 123 45 67", VALID_SCORE)]),
         (TrPhoneRecognizer(), "Tel: +905321234567", [("+905321234567", VALID_SCORE)]),
+        (TrPhoneRecognizer(), "Tel: 905321234567", [("905321234567", VALID_SCORE)]),
         (TrPhoneRecognizer(), "Tel: 0 (532) 123-45-67", [("0 (532) 123-45-67", VALID_SCORE)]),
         (TrPhoneRecognizer(), "Tel: 00905321234567", [("00905321234567", VALID_SCORE)]),
         (TrPhoneRecognizer(), "Tel: 0090 532 123 45 67", [("0090 532 123 45 67", VALID_SCORE)]),

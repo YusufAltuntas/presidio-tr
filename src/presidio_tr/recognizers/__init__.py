@@ -9,7 +9,7 @@ from presidio_tr.validators import tckn_valid, tr_iban_valid, tr_phone_valid, vk
 TCKN_REGEX = r"(?<!\d)[1-9]\d{10}(?!\d)"
 VKN_REGEX = r"(?<!\d)\d{10}(?!\d)"
 IBAN_REGEX = r"(?<![A-Za-z0-9])TR\d{2}(?:\s?\d{4}){5}\s?\d{2}(?!\d)"
-PHONE_REGEX = r"(?<![\d+])(?:(?:\+|00)90[\s-]?|0[\s-]?)?\(?[2-5]\d{2}\)?[\s-]?\d{3}[\s-]?\d{2}[\s-]?\d{2}(?!\d)"
+PHONE_REGEX = r"(?<![\d+])(?:(?:\+|00)?90[\s-]?|0[\s-]?)?\(?[2-5]\d{2}\)?[\s-]?\d{3}[\s-]?\d{2}[\s-]?\d{2}(?!\d)"
 
 
 class TcKimlikRecognizer(TurkishPatternRecognizer):

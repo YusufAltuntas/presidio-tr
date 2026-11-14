@@ -171,7 +171,7 @@ Pre-commit: gitleaks + ruff (`uvx pre-commit install`). CI her push'ta ruff ve b
 
 - Bağlamsız ve checksum'ı bozuk TC kimlik no maskelenmez; bağlamsız VKN de maskelenmez.
 - Desteklenmeyen yazımlar: boşluklu TCKN (`100 000 001 46`), `TR` sonrası boşluklu IBAN (`TR 33 …`), 0850/0800
-  numaraları, `+` işaretsiz `90` önekli telefon (`905321234567`).
+  numaraları.
 - Bağlam eşleştirmesi komşu etiketlere taşabilir: bir etiketin bağlam kelimesi yanındaki başka bir değeri de
   0.6 kademesine sokabilir.
 - Sızıntı garantisinin sınırı: LiteLLM'in logging hook'u bloklamaz. Çağrıdan sonra, loglamadan önce Presidio
