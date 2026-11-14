@@ -5,6 +5,7 @@ Kullanım: set -a && . deploy/.env && set +a && uv run pytest -m e2e -v
 
 import json
 import os
+import re
 import subprocess
 import time
 
@@ -112,8 +113,14 @@ def _langfuse_observations_with_output(user: str) -> list[dict]:
 def _assert_langfuse_masked(observations: list[dict]) -> None:
     serialized = json.dumps(observations, ensure_ascii=False)
     assert TCKN_1 not in serialized
-    # Pozitif kontrol: içerik gerçekten loglandı ve maskeli etiketle geldi (boş geçme olmasın).
-    assert "<TR_NATIONAL_ID" in serialized
+    # Pozitif kontrol: loglanan çıktıda maskeli etiket var (akışsız yanıtta logging hook'u numarasız,
+    # akışlı yanıtta sağlayıcının döndürdüğü numaralı etiket loglanır).
+    outputs = json.dumps([o.get("output") for o in observations], ensure_ascii=False)
+    assert re.search(r"<TR_NATIONAL_ID(_\d+)?>", outputs)
+    # Ön-çağrı maskelemesinin kanıtı: yalnızca pre_call guardrail'i (output_parse_pii) numaralı etiket üretir;
+    # girdide <TR_NATIONAL_ID_1> varsa sağlayıcıya giden metin zaten maskeliydi.
+    inputs = json.dumps([o.get("input") for o in observations], ensure_ascii=False)
+    assert "<TR_NATIONAL_ID_1>" in inputs
 
 
 def test_langfuse_never_sees_raw_pii_and_keeps_end_user():
