@@ -31,7 +31,10 @@ def has_context(text: str, start: int, end: int, stems: tuple[str, ...]) -> bool
     Kök eşleştirmesi Türkçe ekleri tolere eder: "IBAN'ımı" → "iban", "hesabıma" → "hesab".
     Kısa kökler (`tc`, `tel`, `cep`…) yalnızca tam kelimeyle eşleşir.
     """
-    window = (text[max(0, start - WINDOW_BEFORE) : start] + " " + text[end : end + WINDOW_AFTER]).replace(".", "")
-    # Kısaltmalar Latin büyük harfle yazılır: Türkçe kuralla "IBAN" → "ıban" olur, bu yüzden iki küçültme de denenir.
-    words = set(_WORD.findall(tr_lower(window))) | set(_WORD.findall(window.lower()))
+    window = text[max(0, start - WINDOW_BEFORE) : start] + " " + text[end : end + WINDOW_AFTER]
+    # Nokta hem silinir ("T.C." → "tc") hem boşluğa çevrilir ("Tel.No" → "tel no"); ikisinin kelimeleri birleştirilir.
+    words: set[str] = set()
+    for variant in (window.replace(".", ""), window.replace(".", " ")):
+        # Kısaltmalar Latin büyük harfle yazılır: Türkçe kuralla "IBAN" → "ıban" olur, bu yüzden iki küçültme de denenir.
+        words |= set(_WORD.findall(tr_lower(variant))) | set(_WORD.findall(variant.lower()))
     return any(_matches(word, stem) for word in words for stem in stems)

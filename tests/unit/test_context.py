@@ -21,6 +21,9 @@ def test_tr_lower_follows_turkish_casing():
         ("Cep: X", PHONE_STEMS),
         ("Bana X numarasından ulaşabilirsiniz", PHONE_STEMS),
         ("Ulaşın: X", PHONE_STEMS),
+        ("Tel.No: X", PHONE_STEMS),  # noktalı kısaltma: kısa kök yine tam kelime olarak bulunur
+        ("Cep.No X", PHONE_STEMS),
+        ("T.C.Kimlik X", TCKN_STEMS),
     ],
 )
 def test_has_context_finds_inflected_context_words(text, stems):
