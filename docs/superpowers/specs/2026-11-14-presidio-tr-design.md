@@ -60,7 +60,7 @@ presidio-tr/
 | `validators` | "Bu numara geçerli mi?" — TCKN ve VKN checksum, TR IBAN uzunluk + mod-97 | Hiçbir şey |
 | `recognizers` | Regex ile aday bulur, validator + bağlam ile skorlar | Presidio, `validators`, `context` |
 | `context` | Türkçe bağlam kelimeleri ve ek toleranslı eşleştirme | Hiçbir şey |
-| `benchmark` | Veri üretir, üç sistemi karşılaştırır | Paket (dışarıdan) |
+| `benchmark` | Veri üretir, dört sistemi karşılaştırır | Paket (dışarıdan) |
 | `deploy` | Gateway demosu | Paketin Docker imajı |
 
 Paket, benchmark'tan ve deploy'dan habersizdir.
