@@ -33,3 +33,9 @@ def test_build_analyzer_explanation_score_matches_result_score():
 def test_build_analyzer_ignores_bare_number_next_to_false_friend_words():
     text = "Telif hakkı 2024 tarihli 5321234567 numaralı dosya"
     assert build_analyzer().analyze(text, language="tr") == []
+
+
+def test_build_analyzer_masks_valid_vkn_with_compound_context_word():
+    text = "VKNo: 1234567890"
+    results = build_analyzer().analyze(text, language="tr")
+    assert [(r.entity_type, text[r.start : r.end], r.score) for r in results] == [("TR_TAX_ID", "1234567890", 1.0)]

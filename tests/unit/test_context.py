@@ -24,6 +24,15 @@ def test_tr_lower_follows_turkish_casing():
         ("Tel.No: X", PHONE_STEMS),  # noktalı kısaltma: kısa kök yine tam kelime olarak bulunur
         ("Cep.No X", PHONE_STEMS),
         ("T.C.Kimlik X", TCKN_STEMS),
+        ("T.C.No: X", TCKN_STEMS),  # bileşik/ekli yazımlar önek kökleriyle yakalanır
+        ("TCNO X", TCKN_STEMS),
+        ("VKNo: X", VKN_STEMS),
+        ("CepTel: X", PHONE_STEMS),
+        ("TelNo:X", PHONE_STEMS),
+        ("GSMNo X", PHONE_STEMS),
+        ("Cepten X ara", PHONE_STEMS),
+        ("Cebime X", PHONE_STEMS),
+        ("Bana ulaşmak için X", PHONE_STEMS),
     ],
 )
 def test_has_context_finds_inflected_context_words(text, stems):
@@ -53,3 +62,9 @@ def test_has_context_handles_uppercase_acronyms_and_turkish_capitals():
 def test_has_context_ignores_words_that_only_share_a_short_prefix(text):
     start = text.index("X")
     assert not has_context(text, start, start + 1, PHONE_STEMS)
+
+
+@pytest.mark.parametrize(("text", "stems"), [("TCK X", TCKN_STEMS), ("VKNX X", VKN_STEMS), ("GSMA X", PHONE_STEMS)])
+def test_short_stems_do_not_match_longer_words(text, stems):
+    start = text.rindex("X")
+    assert not has_context(text, start, start + 1, stems)

@@ -2,10 +2,26 @@
 
 import re
 
-TCKN_STEMS = ("tc", "tckn", "kimlik", "kimliğ", "vatandaşlık", "vatandaşlığ", "nüfus")
-VKN_STEMS = ("vkn", "vergi")
+TCKN_STEMS = ("tc", "tckn", "kimlik", "kimliğ", "vatandaşlık", "vatandaşlığ", "nüfus", "tcno", "tckimlik")
+VKN_STEMS = ("vkn", "vergi", "vkno")
 IBAN_STEMS = ("iban", "hesap", "hesab")
-PHONE_STEMS = ("tel", "telefon", "gsm", "cep", "whatsapp", "ulaşa", "ulaşın", "ulaşıl")
+PHONE_STEMS = (
+    "tel",
+    "telefon",
+    "gsm",
+    "cep",
+    "whatsapp",
+    "ulaşa",
+    "ulaşın",
+    "ulaşıl",
+    "telno",
+    "gsmno",
+    "ceptel",
+    "cepno",
+    "cepte",
+    "cebim",
+    "ulaşm",
+)
 
 WINDOW_BEFORE = 50
 WINDOW_AFTER = 30
