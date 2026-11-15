@@ -5,6 +5,12 @@
 Turkish personal data (PII) recognizers for Microsoft Presidio: national ID (TCKN), tax ID (VKN), TR IBAN, TR phone.
 This is not an official Microsoft project; it is a community package.
 
+**In short** (1000 synthetic sentences, against the fair baseline):
+
+- VKN F1: 0.00 → 0.80; TR phone F1: 0.49 → 0.90
+- A TCKN/VKN/IBAN with one mistyped digit is still masked when a context word is nearby.
+- LiteLLM gateway demo: the LLM provider and Langfuse only ever see masked text.
+
 ## Why
 
 Presidio already ships `TrNationalIdRecognizer` (checksum-validated, no typo tier, disabled by default) and
@@ -189,7 +195,7 @@ Demo findings (LiteLLM 1.109.1):
 ## Tests and development
 
 ```bash
-uv run pytest                                                 # unit tests (80)
+uv run pytest                                                 # unit tests (98)
 set -a && . deploy/.env && set +a && uv run pytest -m e2e     # end-to-end (7)
 ```
 

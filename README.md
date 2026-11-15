@@ -5,6 +5,12 @@
 Microsoft Presidio için Türkçe kişisel veri (PII) tanıyıcıları: TC kimlik no, VKN, TR IBAN, TR telefon.
 Microsoft'un resmi projesi değildir; topluluk paketidir.
 
+**Kısaca** (1000 sentetik cümle, adil taban çizgisine karşı):
+
+- VKN F1: 0.00 → 0.80; TR telefon F1: 0.49 → 0.90
+- Bir hanesi yanlış yazılmış TCKN/VKN/IBAN, yanında bağlam kelimesi varsa yine maskelenir.
+- LiteLLM gateway demosu: LLM sağlayıcısı ve Langfuse yalnızca maskeli metni görür.
+
 ## Neden
 
 Presidio'da `TrNationalIdRecognizer` (checksum doğrulamalı, yazım hatası kademesi yok, varsayılan olarak kapalı) ve `TrLicensePlateRecognizer`
@@ -189,7 +195,7 @@ Demo bulguları (LiteLLM 1.109.1):
 ## Testler ve geliştirme
 
 ```bash
-uv run pytest                                                 # birim testler (80)
+uv run pytest                                                 # birim testler (98)
 set -a && . deploy/.env && set +a && uv run pytest -m e2e     # uçtan uca (7)
 ```
 
