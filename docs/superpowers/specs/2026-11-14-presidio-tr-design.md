@@ -168,16 +168,19 @@ Plan yazılırken presidio-analyzer 2.2.366 ve LiteLLM 1.109.1 ile bir deneme (s
 - Negatif sayılar checksum'a göre süzülür (sipariş no geçerli TCKN, referans no geçerli VKN olamaz); aksi halde
   gerçek PII "PII değil" diye etiketlenir.
 - Tüm değerler (tarih dahil) seed'li `random.Random`'dan üretilir; aynı seed her gün aynı veriyi verir.
-- Karşılaştırma, üç sistem: (a) varsayılan Presidio — `language=en` ve hazır tanıyıcılarla, yani Türkçe
+- Karşılaştırma, dört sistem: (a) varsayılan Presidio — `language=en` ve hazır tanıyıcılarla, yani Türkçe
   kurulumu olmayan bir kullanıcının elinde olan; (b) adil taban çizgisi — `language=tr`, Presidio'nun hazır
   tanıyıcıları ve kendi `TrNationalIdRecognizer`'ı (varsayılan kapalı, elle eklenir); (c) Presidio +
-  `presidio-tr`, `language=tr`. Varlık türü başına P/R/F1.
+  `presidio-tr`, `language=tr`; (d) (c)'nin `score_threshold=0.7` ile çalıştırılmışı —
+  bağlam kademesi kapalı, kesinlik tercih edenler için. Varlık türü başına P/R/F1.
 - Bağlamsız zor PII şablonları (bağlamsız VKN, öneksiz telefon) bilerek eklenir; recall şablon bağlamıyla şişmesin.
+- **Bağımsız set:** `HELDOUT_TEMPLATES`, koda erişimi olmayan ayrı bir LLM ajanına yalnızca alan listesiyle yazdırılmış 24 şablon.
+  Tanıyıcılar bu sete göre ayarlanmaz; sonucu ana setten ayrı raporlanır.
 - Tür gözetmeyen "maskelenen" oranı da raporlanır: varsayılan Presidio TC kimliği yanlış türle
   (`US_BANK_NUMBER`, `DATE_TIME`…) yakalayıp yine maskeleyebilir. Bu yüzden asıl karşılaştırma
   **yanlış maskeleme** oranıdır: PII olmayan sayıların (sipariş no, referans no) maskelenme oranı.
   Veri satırı bu sayıları `negatives` alanında taşır.
-- Sonuç `benchmark/results/<YYYY-MM-DD>.md`; README tablosu buradan.
+- Sonuç `benchmark/results/<YYYY-MM-DD>[-<etiket>].md` (ör. `-heldout`); README tablosu buradan.
 - Üretilen veri commit'lenmez (`benchmark/data/` gitignore'da); script + sabit seed commit'lenir.
 
 ## Repo kuralları

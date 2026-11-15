@@ -36,22 +36,29 @@ Varlık adları bilerek upstream ile aynıdır (`TR_NATIONAL_ID`, `IBAN_CODE`, `
 | Presidio + presidio-tr | TR_TAX_ID | 0.80 | 0.81 | 0.80 | 0.81 |
 | Presidio + presidio-tr | IBAN_CODE | 1.00 | 1.00 | 1.00 | 1.00 |
 | Presidio + presidio-tr | PHONE_NUMBER | 0.89 | 0.91 | 0.90 | 0.91 |
+| Presidio + presidio-tr (score_threshold=0.7) | TR_NATIONAL_ID | 1.00 | 0.62 | 0.77 | 0.62 |
+| Presidio + presidio-tr (score_threshold=0.7) | TR_TAX_ID | 1.00 | 0.60 | 0.75 | 0.60 |
+| Presidio + presidio-tr (score_threshold=0.7) | IBAN_CODE | 1.00 | 0.83 | 0.91 | 0.83 |
+| Presidio + presidio-tr (score_threshold=0.7) | PHONE_NUMBER | 1.00 | 0.77 | 0.87 | 0.77 |
 
 | Sistem | Yanlış maskeleme (PII olmayan sayılar) |
 |---|---|
 | Presidio (en, varsayılan) | 1.00 |
 | Presidio (tr, hazır tanıyıcılar + TrNationalIdRecognizer) | 0.51 |
 | Presidio + presidio-tr | 0.41 |
+| Presidio + presidio-tr (score_threshold=0.7) | 0.00 |
 
 `en` satırı, Türkçe kurulumu olmayan bir kullanıcının elde ettiği sonuçtur; `tr` (hazır tanıyıcılar) satırı adil
 taban çizgisidir. "Maskelenen": türü yanlış da olsa bir tahminle örtülen PII oranı. Veri 1000 sentetik cümledir
 (Faker `tr_TR` + şablonlar, seed 42); bağlam kelimesinin yanında duran PII olmayan sayılar ("Kimlik doğrulama
-kodunuz ...") ve bağlamsız zor PII örnekleri de içerir. Sonuç dosyası: `benchmark/results/2026-11-14.md`.
+kodunuz ...") ve bağlamsız zor PII örnekleri de içerir. Sonuç dosyası: `benchmark/results/2026-11-15.md`.
 Yeniden üretmek için:
 
 ```bash
 uv sync --group benchmark && uv run python -m benchmark.generate --n 1000 --seed 42 && uv run python -m benchmark.run
 ```
+
+Bağımsız set: `uv run python -m benchmark.generate --templates heldout --out benchmark/data/tr_pii_heldout.jsonl && uv run python -m benchmark.run --data benchmark/data/tr_pii_heldout.jsonl --tag heldout`
 
 Düz `uv sync` benchmark grubunun modelini yine kaldırır.
 
@@ -68,8 +75,26 @@ tercih ediyorsanız bağlam kademesini skor eşiğiyle kapatın:
 analyzer.analyze(text, language="tr", score_threshold=0.7)
 ```
 
-Eşikte recall değerleri: `TR_NATIONAL_ID` 0.62, `TR_TAX_ID` 0.60, `IBAN_CODE` 0.83, `PHONE_NUMBER` 0.77.
-Eşikli sürüm için ayrı bir benchmark satırı yoktur.
+Eşikli sürüm tablodaki `score_threshold=0.7` satırıdır.
+
+### Bağımsız şablon seti
+
+Ana şablonları tanıyıcıları yazan kişi yazdı. Ayrıca, repodaki koda erişimi olmayan ayrı bir LLM ajanına yalnızca
+alan listesiyle yazdırılmış 24 şablonluk bir set var (`HELDOUT_TEMPLATES`, `benchmark/generate.py`); tanıyıcılar bu sete göre
+ayarlanmadı. Sonuç: `benchmark/results/2026-11-15-heldout.md`.
+
+| Sistem | Varlık | Precision | Recall | F1 | Maskelenen |
+|---|---|---|---|---|---|
+| Presidio (tr, hazır tanıyıcılar + TrNationalIdRecognizer) | TR_NATIONAL_ID | 1.00 | 0.71 | 0.83 | 0.76 |
+| Presidio (tr, hazır tanıyıcılar + TrNationalIdRecognizer) | TR_TAX_ID | 0.00 | 0.00 | 0.00 | 0.86 |
+| Presidio (tr, hazır tanıyıcılar + TrNationalIdRecognizer) | IBAN_CODE | 1.00 | 0.72 | 0.84 | 0.75 |
+| Presidio (tr, hazır tanıyıcılar + TrNationalIdRecognizer) | PHONE_NUMBER | 0.25 | 0.81 | 0.38 | 0.81 |
+| Presidio + presidio-tr | TR_NATIONAL_ID | 0.78 | 1.00 | 0.88 | 1.00 |
+| Presidio + presidio-tr | TR_TAX_ID | 0.64 | 1.00 | 0.78 | 1.00 |
+| Presidio + presidio-tr | IBAN_CODE | 1.00 | 1.00 | 1.00 | 1.00 |
+| Presidio + presidio-tr | PHONE_NUMBER | 1.00 | 0.76 | 0.86 | 0.76 |
+
+Yanlış maskeleme: hazır tanıyıcılar 0.61, presidio-tr 0.17 (heldout dosyasından).
 
 ## Kurulum ve kullanım
 

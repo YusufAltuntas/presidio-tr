@@ -36,22 +36,29 @@ number under wrong types such as `US_BANK_NUMBER` / `DATE_TIME`.
 | Presidio + presidio-tr | TR_TAX_ID | 0.80 | 0.81 | 0.80 | 0.81 |
 | Presidio + presidio-tr | IBAN_CODE | 1.00 | 1.00 | 1.00 | 1.00 |
 | Presidio + presidio-tr | PHONE_NUMBER | 0.89 | 0.91 | 0.90 | 0.91 |
+| Presidio + presidio-tr (score_threshold=0.7) | TR_NATIONAL_ID | 1.00 | 0.62 | 0.77 | 0.62 |
+| Presidio + presidio-tr (score_threshold=0.7) | TR_TAX_ID | 1.00 | 0.60 | 0.75 | 0.60 |
+| Presidio + presidio-tr (score_threshold=0.7) | IBAN_CODE | 1.00 | 0.83 | 0.91 | 0.83 |
+| Presidio + presidio-tr (score_threshold=0.7) | PHONE_NUMBER | 1.00 | 0.77 | 0.87 | 0.77 |
 
 | System | Over-masking (non-PII numbers) |
 |---|---|
 | Presidio (en, default) | 1.00 |
 | Presidio (tr, built-in recognizers + TrNationalIdRecognizer) | 0.51 |
 | Presidio + presidio-tr | 0.41 |
+| Presidio + presidio-tr (score_threshold=0.7) | 0.00 |
 
 The `en` row is what a user gets without any Turkish setup; the `tr` (built-in recognizers) row is the fair
 baseline. "Masked": share of PII covered by some prediction, even of the wrong type. The data is 1000 synthetic
 sentences (Faker `tr_TR` + templates, seed 42); it includes non-PII numbers placed next to context words ("Kimlik
 doğrulama kodunuz ..." / "Your ID verification code ...") and context-free hard PII cases. Results file:
-`benchmark/results/2026-11-14.md`. To reproduce:
+`benchmark/results/2026-11-15.md`. To reproduce:
 
 ```bash
 uv sync --group benchmark && uv run python -m benchmark.generate --n 1000 --seed 42 && uv run python -m benchmark.run
 ```
+
+Held-out set: `uv run python -m benchmark.generate --templates heldout --out benchmark/data/tr_pii_heldout.jsonl && uv run python -m benchmark.run --data benchmark/data/tr_pii_heldout.jsonl --tag heldout`
 
 Plain `uv sync` removes the benchmark group's model again.
 
@@ -68,8 +75,26 @@ drop the context tier with a score threshold:
 analyzer.analyze(text, language="tr", score_threshold=0.7)
 ```
 
-Recall at that threshold: `TR_NATIONAL_ID` 0.62, `TR_TAX_ID` 0.60, `IBAN_CODE` 0.83, `PHONE_NUMBER` 0.77.
-There is no separate benchmark row for the thresholded variant.
+The thresholded version is the `score_threshold=0.7` row in the table.
+
+### Held-out template set
+
+The main templates were written by the same person who wrote the recognizers. There is also a separate 24-template
+set (`HELDOUT_TEMPLATES`, `benchmark/generate.py`) written by a separate LLM agent from the field list alone, without
+access to the code; the recognizers were not tuned on it. Results: `benchmark/results/2026-11-15-heldout.md`.
+
+| System | Entity | Precision | Recall | F1 | Masked |
+|---|---|---|---|---|---|
+| Presidio (tr, built-in recognizers + TrNationalIdRecognizer) | TR_NATIONAL_ID | 1.00 | 0.71 | 0.83 | 0.76 |
+| Presidio (tr, built-in recognizers + TrNationalIdRecognizer) | TR_TAX_ID | 0.00 | 0.00 | 0.00 | 0.86 |
+| Presidio (tr, built-in recognizers + TrNationalIdRecognizer) | IBAN_CODE | 1.00 | 0.72 | 0.84 | 0.75 |
+| Presidio (tr, built-in recognizers + TrNationalIdRecognizer) | PHONE_NUMBER | 0.25 | 0.81 | 0.38 | 0.81 |
+| Presidio + presidio-tr | TR_NATIONAL_ID | 0.78 | 1.00 | 0.88 | 1.00 |
+| Presidio + presidio-tr | TR_TAX_ID | 0.64 | 1.00 | 0.78 | 1.00 |
+| Presidio + presidio-tr | IBAN_CODE | 1.00 | 1.00 | 1.00 | 1.00 |
+| Presidio + presidio-tr | PHONE_NUMBER | 1.00 | 0.76 | 0.86 | 0.76 |
+
+Over-masking: built-in recognizers 0.61, presidio-tr 0.17 (from the held-out file).
 
 ## Install and usage
 
