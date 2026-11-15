@@ -96,7 +96,7 @@ ayarlanmadı. Sonuç: `benchmark/results/2026-11-15-heldout.md`.
 
 Yanlış maskeleme: hazır tanıyıcılar 0.61, presidio-tr 0.17 (heldout dosyasından).
 
-Bu sette `score_threshold=0.7` ile recall: `TR_NATIONAL_ID` 0.71, `TR_TAX_ID` 0.47, `IBAN_CODE` 0.72, `PHONE_NUMBER` 0.49; eşiğin bedeli ana setten yüksektir.
+Bu sette `score_threshold=0.7` ile recall: `TR_NATIONAL_ID` 0.71, `TR_TAX_ID` 0.47, `IBAN_CODE` 0.72, `PHONE_NUMBER` 0.49; VKN, IBAN ve telefonda eşiğin bedeli ana setten yüksektir.
 
 ## Kurulum ve kullanım
 

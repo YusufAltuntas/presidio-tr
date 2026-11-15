@@ -96,7 +96,7 @@ access to the code; the recognizers were not tuned on it. Results: `benchmark/re
 
 Over-masking: built-in recognizers 0.61, presidio-tr 0.17 (from the held-out file).
 
-On this set, recall with `score_threshold=0.7` is `TR_NATIONAL_ID` 0.71, `TR_TAX_ID` 0.47, `IBAN_CODE` 0.72, `PHONE_NUMBER` 0.49; the threshold costs more here than on the main set.
+On this set, recall with `score_threshold=0.7` is `TR_NATIONAL_ID` 0.71, `TR_TAX_ID` 0.47, `IBAN_CODE` 0.72, `PHONE_NUMBER` 0.49; for VKN, IBAN and phone the threshold costs more here than on the main set.
 
 ## Install and usage
 
