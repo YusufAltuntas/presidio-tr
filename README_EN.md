@@ -9,7 +9,7 @@ This is not an official Microsoft project; it is a community package.
 
 - VKN F1: 0.00 → 0.80; TR phone F1: 0.49 → 0.90
 - A TCKN/VKN/IBAN with one mistyped digit is still masked when a context word is nearby.
-- LiteLLM gateway demo: the LLM provider and Langfuse only ever see masked text.
+- LiteLLM gateway demo: the LLM provider only sees masked text; so does Langfuse while the analyzer and anonymizer are healthy.
 
 ## Why
 

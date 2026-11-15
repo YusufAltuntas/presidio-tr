@@ -9,7 +9,7 @@ Microsoft'un resmi projesi değildir; topluluk paketidir.
 
 - VKN F1: 0.00 → 0.80; TR telefon F1: 0.49 → 0.90
 - Bir hanesi yanlış yazılmış TCKN/VKN/IBAN, yanında bağlam kelimesi varsa yine maskelenir.
-- LiteLLM gateway demosu: LLM sağlayıcısı ve Langfuse yalnızca maskeli metni görür.
+- LiteLLM gateway demosu: LLM sağlayıcısı yalnızca maskeli metni görür; Langfuse da analyzer ve anonymizer sağlıklıyken.
 
 ## Neden
 
