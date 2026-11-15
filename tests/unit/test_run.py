@@ -1,4 +1,4 @@
-from benchmark.run import score, vanilla_turkish_predictor
+from benchmark.run import score, turkish_predictor, vanilla_turkish_predictor
 
 ROWS = [
     {
@@ -32,3 +32,9 @@ def test_vanilla_turkish_predictor_detects_valid_tckn_as_national_id():
     text = "TC kimlik no 10000000146"
     spans = vanilla_turkish_predictor()(text)
     assert any(entity == "TR_NATIONAL_ID" and text[start:end] == "10000000146" for start, end, entity in spans)
+
+
+def test_turkish_predictor_threshold_drops_context_tier():
+    text = "Cep: 5321234567"
+    assert turkish_predictor()(text) == [(5, 15, "PHONE_NUMBER")]
+    assert turkish_predictor(score_threshold=0.7)(text) == []

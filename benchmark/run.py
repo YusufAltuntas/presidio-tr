@@ -1,4 +1,4 @@
-"""Varsayılan Presidio (en), Türkçe kurulmuş Presidio ve Presidio + presidio-tr'yi aynı veri üzerinde karşılaştırır.
+"""Varsayılan Presidio (en), Türkçe kurulmuş Presidio ve Presidio + presidio-tr'yi (eşiksiz ve eşikli) aynı veri üzerinde karşılaştırır.
 
 Kullanım: python -m benchmark.run --data benchmark/data/tr_pii.jsonl --out-dir benchmark/results
 """
@@ -105,9 +105,12 @@ def vanilla_turkish_predictor() -> Callable[[str], list[Span]]:
     return lambda text: [(r.start, r.end, r.entity_type) for r in analyzer.analyze(text, language="tr")]
 
 
-def turkish_predictor() -> Callable[[str], list[Span]]:
+def turkish_predictor(score_threshold: float | None = None) -> Callable[[str], list[Span]]:
+    """Presidio + presidio-tr. `score_threshold=0.7` bağlam kademesini (0.6) kapatır."""
     analyzer = build_analyzer()
-    return lambda text: [(r.start, r.end, r.entity_type) for r in analyzer.analyze(text, language="tr")]
+    return lambda text: [
+        (r.start, r.end, r.entity_type) for r in analyzer.analyze(text, language="tr", score_threshold=score_threshold)
+    ]
 
 
 def to_markdown(results: dict[str, tuple[dict[str, Counts], float]], n_rows: int, data_path: Path) -> str:
@@ -141,6 +144,7 @@ def main() -> None:
         "Presidio (en, varsayılan)": score(rows, baseline_predictor()),
         "Presidio (tr, hazır tanıyıcılar + TrNationalIdRecognizer)": score(rows, vanilla_turkish_predictor()),
         "Presidio + presidio-tr": score(rows, turkish_predictor()),
+        "Presidio + presidio-tr (score_threshold=0.7)": score(rows, turkish_predictor(score_threshold=0.7)),
     }
     report = to_markdown(results, len(rows), args.data)
     args.out_dir.mkdir(parents=True, exist_ok=True)
