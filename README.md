@@ -200,7 +200,7 @@ Demo bulguları (LiteLLM 1.109.1):
 ## Testler ve geliştirme
 
 ```bash
-uv run pytest                                                 # birim testler (98)
+uv run pytest                                                 # birim testler (111)
 set -a && . deploy/.env && set +a && uv run pytest -m e2e     # uçtan uca (7)
 ```
 

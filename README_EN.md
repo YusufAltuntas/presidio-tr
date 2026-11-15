@@ -200,7 +200,7 @@ Demo findings (LiteLLM 1.109.1):
 ## Tests and development
 
 ```bash
-uv run pytest                                                 # unit tests (98)
+uv run pytest                                                 # unit tests (111)
 set -a && . deploy/.env && set +a && uv run pytest -m e2e     # end-to-end (7)
 ```
 
