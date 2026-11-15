@@ -108,6 +108,8 @@ Bu yüzden VKN için bağlam zorunludur; bağlamsız yazılmış geçerli VKN ma
 ## Türkçe bağlam eşleştirme
 
 - Lemma yerine kök öneki: "hesabınız", "hesaplarım" gibi ekli biçimler `hesap` / `hesab` köküyle yakalanır.
+- Kısa kökler (`tc`, `vkn`, `tel`, `gsm`, `cep`) yalnızca tam kelimeyle eşleşir; "telif", "cephe" bağlam sayılmaz.
+  `ulaş` yerine fiil biçimleri (`ulaşa`, `ulaşın`, `ulaşıl`) kullanılır, "ulaşım" eşleşmez.
 - Ünsüz yumuşaması kök listesindedir: `hesap`/`hesab`, `kimlik`/`kimliğ`.
 - Türkçe küçültme "IBAN"ı "ıban" yapar; bu yüzden hem Türkçe hem standart küçültme denenir.
 

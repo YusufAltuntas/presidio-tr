@@ -28,3 +28,8 @@ def test_build_analyzer_explanation_score_matches_result_score():
     assert len(results) == 1
     assert results[0].score == 1.0
     assert results[0].analysis_explanation.score == 1.0
+
+
+def test_build_analyzer_ignores_bare_number_next_to_false_friend_words():
+    text = "Telif hakkı 2024 tarihli 5321234567 numaralı dosya"
+    assert build_analyzer().analyze(text, language="tr") == []

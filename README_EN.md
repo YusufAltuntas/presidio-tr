@@ -108,6 +108,8 @@ therefore requires context; a valid VKN written without context is not masked.
 ## Turkish context matching
 
 - Stem prefixes instead of lemmas: inflected forms like "hesabınız" and "hesaplarım" match the `hesap` / `hesab` stems.
+- Short stems (`tc`, `vkn`, `tel`, `gsm`, `cep`) match whole words only, so "telif" (copyright) and "cephe" (facade)
+  are not context. `ulaş` is narrowed to its verb forms (`ulaşa`, `ulaşın`, `ulaşıl`), so "ulaşım" (transport) is not.
 - Softened consonants are listed in the stems: `hesap`/`hesab`, `kimlik`/`kimliğ`.
 - Turkish lowercasing turns "IBAN" into "ıban", so both Turkish and standard lowercasing are tried.
 
