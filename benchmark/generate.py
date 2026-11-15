@@ -1,6 +1,7 @@
 """Etiketli sentetik Türkçe benchmark verisi üretir.
 
 Kullanım: python -m benchmark.generate --n 1000 --seed 42 --out benchmark/data/tr_pii.jsonl
+Bağımsız set: python -m benchmark.generate --templates heldout --out benchmark/data/tr_pii_heldout.jsonl
 """
 
 import argparse
@@ -82,6 +83,37 @@ TEMPLATES = [
     "TC Kargo takip numaranız {order_no}.",
 ]
 
+HELDOUT_TEMPLATES = [
+    # PII içeren
+    "Merhaba, ben {name}. Kimlik numaram {tckn}, sözleşmemi yenilemek istiyorum.",  # resmi, "kimlik numaram" ipucu
+    "abi tc'si {tckn} olan hattı kapatır mısınız",  # samimi, küçük harf, ekli "tc'si"
+    "Şirketimizin vergi no'su {vkn}, faturaları bu numaraya kesin lütfen.",  # ekli "vergi no'su"
+    "İade tutarı {amount} IBAN'ıma yatırılsın: {iban}",  # ekli "IBAN'ıma"
+    "Beni şu numaradan arayabilirsiniz: {phone}. Akşam 18:00 sonrası müsaitim.",  # telefon, ipucu kelime var
+    "{name} {bare_phone}",  # ipucusuz: isim + öneksiz telefon
+    "{name} {tckn}",  # ipucusuz: isim + TCKN
+    "{iban}",  # ipucusuz: tek başına IBAN
+    "TC kimlik no yanlış yazdım galiba: {tckn_typo}, kontrol eder misiniz? {city} şubesinden başvurmuştum.",  # typo TCKN
+    "Vergi numaramız {vkn_typo} diye kayıtlı görünüyor ama sistem hata veriyor, {date} tarihli fatura için.",  # typo VKN
+    "havale için hesap: {iban_typo} ismi {name}, {amount} gönderilecek",  # typo IBAN, samimi
+    "Sn. {name}, müşteri irtibat tel: {bare_phone} / alternatif GSM {phone} olarak kayda geçirildi.",  # iki telefon biçimi
+    # PII içermeyen
+    "Siparişiniz {order_no} numarasıyla kargoya verilmiştir, tahmini teslim {date}.",  # kargo takip no
+    "Fatura no {ref_no} için ödeme hatırlatması: {amount} son ödeme tarihi {date}.",  # fatura referansı
+    "{name} Hanım, {ref_no} numaralı dosyanız incelemeye alındı.",  # dosya no, isimle birlikte
+    "Başvuru numaranız {ref_no}. Sonucu SMS ile bildireceğiz.",  # başvuru no, "SMS" telefona yakın
+    "Poliçe no {ref_no} kapsamındaki hasar talebiniz {city} servisine iletildi.",  # poliçe numarası
+    "Abonelik kodunuz {ref_no}; {date} itibarıyla {amount} tutarında yenilendi.",  # abonelik kodu
+    "Sözleşme numarası {ref_no} olan hattınızın tarifesi değişti, bilgi için müşteri hizmetlerini arayın.",  # "hat", "arayın"
+    "Takip numarası: {order_no} - kargonuz {city} dağıtım merkezinde bekliyor.",  # 11 haneli takip no
+    "iade talebi oluşturdum, sipariş numaram {order_no}, ürün hasarlı geldi",  # samimi, 11 haneli sipariş no
+    "Dekont: {ref_no}. {amount} tutarındaki havale {date} tarihinde hesabınıza geçti.",  # "hesap" yakın, referans
+    "Vergi dairesi işlem no {ref_no} ile e-arşiv faturanız oluşturuldu.",  # "vergi" + 10 hane, VKN değil
+    "Kimlik doğrulama talebiniz {order_no} numaralı işlem olarak kaydedildi, {name}.",  # "kimlik" + 11 haneli işlem no
+]
+
+TEMPLATE_SETS = {"main": TEMPLATES, "heldout": HELDOUT_TEMPLATES}
+
 
 def render(template: str, rng: random.Random, fake: Faker) -> dict:
     """Şablonu doldurur ve PII alanlarının karakter aralıklarını etiketler."""
@@ -100,12 +132,12 @@ def render(template: str, rng: random.Random, fake: Faker) -> dict:
     return {"text": text, "spans": spans, "negatives": negatives}
 
 
-def generate(n: int, seed: int) -> list[dict]:
-    """Sabit seed ile n etiketli örnek üretir."""
+def generate(n: int, seed: int, templates: list[str] = TEMPLATES) -> list[dict]:
+    """Sabit seed ile verilen şablonlardan n etiketli örnek üretir."""
     rng = random.Random(seed)
     fake = Faker("tr_TR")
     fake.seed_instance(seed)
-    return [render(rng.choice(TEMPLATES), rng, fake) for _ in range(n)]
+    return [render(rng.choice(templates), rng, fake) for _ in range(n)]
 
 
 def main() -> None:
@@ -113,10 +145,11 @@ def main() -> None:
     parser.add_argument("--n", type=int, default=1000)
     parser.add_argument("--seed", type=int, default=42)
     parser.add_argument("--out", type=Path, default=Path("benchmark/data/tr_pii.jsonl"))
+    parser.add_argument("--templates", choices=sorted(TEMPLATE_SETS), default="main")
     args = parser.parse_args()
     args.out.parent.mkdir(parents=True, exist_ok=True)
     with args.out.open("w", encoding="utf-8") as f:
-        for row in generate(args.n, args.seed):
+        for row in generate(args.n, args.seed, TEMPLATE_SETS[args.templates]):
             f.write(json.dumps(row, ensure_ascii=False) + "\n")
     print(f"{args.n} örnek yazıldı: {args.out}")
 

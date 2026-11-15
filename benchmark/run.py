@@ -113,6 +113,12 @@ def turkish_predictor(score_threshold: float | None = None) -> Callable[[str], l
     ]
 
 
+def report_path(out_dir: Path, tag: str = "") -> Path:
+    """Sonuç dosyası: <out_dir>/<YYYY-MM-DD>[-<tag>].md"""
+    name = datetime.date.today().isoformat() + (f"-{tag}" if tag else "")
+    return out_dir / f"{name}.md"
+
+
 def to_markdown(results: dict[str, tuple[dict[str, Counts], float]], n_rows: int, data_path: Path) -> str:
     lines = [
         f"# Benchmark — {datetime.date.today().isoformat()}",
@@ -138,6 +144,7 @@ def main() -> None:
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument("--data", type=Path, default=Path("benchmark/data/tr_pii.jsonl"))
     parser.add_argument("--out-dir", type=Path, default=Path("benchmark/results"))
+    parser.add_argument("--tag", default="", help="Sonuç dosyası adına eklenir, ör. heldout")
     args = parser.parse_args()
     rows = [json.loads(line) for line in args.data.read_text(encoding="utf-8").splitlines()]
     results = {
@@ -148,7 +155,7 @@ def main() -> None:
     }
     report = to_markdown(results, len(rows), args.data)
     args.out_dir.mkdir(parents=True, exist_ok=True)
-    out = args.out_dir / f"{datetime.date.today().isoformat()}.md"
+    out = report_path(args.out_dir, args.tag)
     out.write_text(report, encoding="utf-8")
     print(report)
     print(f"Yazıldı: {out}")

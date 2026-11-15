@@ -1,4 +1,7 @@
-from benchmark.run import score, turkish_predictor, vanilla_turkish_predictor
+import datetime
+from pathlib import Path
+
+from benchmark.run import report_path, score, turkish_predictor, vanilla_turkish_predictor
 
 ROWS = [
     {
@@ -38,3 +41,9 @@ def test_turkish_predictor_threshold_drops_context_tier():
     text = "Cep: 5321234567"
     assert turkish_predictor()(text) == [(5, 15, "PHONE_NUMBER")]
     assert turkish_predictor(score_threshold=0.7)(text) == []
+
+
+def test_report_path_appends_tag_to_date():
+    today = datetime.date.today().isoformat()
+    assert report_path(Path("r")) == Path("r") / f"{today}.md"
+    assert report_path(Path("r"), "heldout") == Path("r") / f"{today}-heldout.md"
