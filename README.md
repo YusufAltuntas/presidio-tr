@@ -1,6 +1,6 @@
 # presidio-tr
 
-[Türkçe](README.md) · [English](README_EN.md)
+[Türkçe](https://github.com/YusufAltuntas/presidio-tr/blob/main/README.md) · [English](https://github.com/YusufAltuntas/presidio-tr/blob/main/README_EN.md)
 
 Microsoft Presidio için Türkçe kişisel veri (PII) tanıyıcıları: TC kimlik no, VKN, TR IBAN, TR telefon.
 Microsoft'un resmi projesi değildir; topluluk paketidir.

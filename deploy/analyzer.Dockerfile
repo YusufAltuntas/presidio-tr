@@ -1,7 +1,7 @@
 FROM python:3.11-slim
 
 WORKDIR /app
-COPY pyproject.toml README.md LICENSE ./
+COPY pyproject.toml README.md README_EN.md LICENSE ./
 COPY src ./src
 RUN pip install --no-cache-dir ".[server]"
 

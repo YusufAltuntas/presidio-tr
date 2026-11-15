@@ -1,6 +1,6 @@
 # presidio-tr
 
-[Türkçe](README.md) · [English](README_EN.md)
+[Türkçe](https://github.com/YusufAltuntas/presidio-tr/blob/main/README.md) · [English](https://github.com/YusufAltuntas/presidio-tr/blob/main/README_EN.md)
 
 Turkish personal data (PII) recognizers for Microsoft Presidio: national ID (TCKN), tax ID (VKN), TR IBAN, TR phone.
 This is not an official Microsoft project; it is a community package.

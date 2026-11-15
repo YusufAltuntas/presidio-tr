@@ -2,10 +2,25 @@
 name = "presidio-tr"
 version = "0.1.0"
 description = "Turkish PII recognizers for Microsoft Presidio (unofficial community package)"
-readme = "README.md"
+readme = "README_EN.md"
 requires-python = ">=3.11"
 license = "MIT"
+authors = [{ name = "Yusuf Altuntaş" }]
+keywords = ["presidio", "pii", "turkish", "anonymization", "tckn", "vkn", "iban", "kvkk"]
+classifiers = [
+    "Development Status :: 3 - Alpha",
+    "Intended Audience :: Developers",
+    "Natural Language :: Turkish",
+    "Programming Language :: Python :: 3",
+    "Programming Language :: Python :: 3.11",
+    "Topic :: Security",
+    "Topic :: Text Processing :: Linguistic",
+]
 dependencies = ["presidio-analyzer>=2.2.360,<2.3"]
+
+[project.urls]
+Homepage = "https://github.com/YusufAltuntas/presidio-tr"
+Issues = "https://github.com/YusufAltuntas/presidio-tr/issues"
 
 [project.optional-dependencies]
 server = ["fastapi>=0.115", "uvicorn>=0.30"]
@@ -29,6 +44,9 @@ build-backend = "hatchling.build"
 
 [tool.hatch.build.targets.wheel]
 packages = ["src/presidio_tr"]
+
+[tool.hatch.build.targets.sdist]
+include = ["src/presidio_tr", "README.md", "README_EN.md", "LICENSE"]
 
 [tool.ruff]
 line-length = 120
