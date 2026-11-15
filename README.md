@@ -85,8 +85,10 @@ Eşikli sürüm tablodaki `score_threshold=0.7` satırıdır.
 
 ### Bağımsız şablon seti
 
-Ana şablonları tanıyıcıları yazan kişi yazdı. Ayrıca, repodaki koda erişimi olmayan ayrı bir LLM ajanına yalnızca
-alan listesiyle yazdırılmış 24 şablonluk bir set var (`HELDOUT_TEMPLATES`, `benchmark/generate.py`); tanıyıcılar bu sete göre
+Ana şablonları tanıyıcıları yazan kişi yazdı. Ayrıca, repodaki koda erişimi olmayan ayrı bir LLM ajanına yazdırılmış 24 şablonluk bir set var
+(`HELDOUT_TEMPLATES`, `benchmark/generate.py`). Ajana alan listesi, hangi alanın PII olduğu ve bir dağılım isteği verildi:
+12 PII'li şablon (en az 3'ü ipucu kelimesiz, en az 2'si yazım hatalı alanla) ve 12 PII'siz şablon (PII kelimelerine yakın
+numaralar dahil). Değer üreteçleri ana setle ortaktır; yalnızca cümle şablonları bağımsızdır. Tanıyıcılar bu sete göre
 ayarlanmadı. Sonuç: `benchmark/results/2026-11-15-heldout.md`.
 
 | Sistem | Varlık | Precision | Recall | F1 | Maskelenen |
@@ -102,7 +104,9 @@ ayarlanmadı. Sonuç: `benchmark/results/2026-11-15-heldout.md`.
 
 Yanlış maskeleme: hazır tanıyıcılar 0.61, presidio-tr 0.17 (heldout dosyasından).
 
-Bu sette `score_threshold=0.7` ile recall: `TR_NATIONAL_ID` 0.71, `TR_TAX_ID` 0.47, `IBAN_CODE` 0.72, `PHONE_NUMBER` 0.49; VKN, IBAN ve telefonda eşiğin bedeli ana setten yüksektir.
+Telefonda recall'un taban çizgisinin altında kalması (0.76'ya karşı 0.81) tasarım gereğidir: öneksiz ve bağlamsız 10 haneli numara maskelenmez (`{name} {bare_phone}` şablonu); taban çizgisi bu numaraları 0.25 precision pahasına yakalıyor.
+
+Bu sette `score_threshold=0.7` ile recall: `TR_NATIONAL_ID` 0.71, `TR_TAX_ID` 0.47, `IBAN_CODE` 0.72, `PHONE_NUMBER` 0.49; eşikli recall VKN, IBAN ve telefonda ana setten düşüktür.
 
 ## Kurulum ve kullanım
 
@@ -143,6 +147,7 @@ Bu yüzden VKN için bağlam zorunludur; bağlamsız yazılmış geçerli VKN ma
 - Lemma yerine kök öneki: "hesabınız", "hesaplarım" gibi ekli biçimler `hesap` / `hesab` köküyle yakalanır.
 - Kısa kökler (`tc`, `vkn`, `tel`, `gsm`, `cep`) yalnızca tam kelimeyle eşleşir; "telif", "cephe" bağlam sayılmaz.
   `ulaş` yerine fiil biçimleri (`ulaşa`, `ulaşın`, `ulaşıl`) kullanılır, "ulaşım" eşleşmez.
+  Yaygın bileşik/ekli biçimler ayrı kök olarak listelenir (`tcno`, `tckimlik`, `vkno`, `telno`, `gsmno`, `ceptel`, `cepno`, `cepte`, `cebim`, `ulaşm`); `telim`, `telden` gibi diğer ekli biçimler bağlam sayılmaz.
 - Ünsüz yumuşaması kök listesindedir: `hesap`/`hesab`, `kimlik`/`kimliğ`.
 - Türkçe küçültme "IBAN"ı "ıban" yapar; bu yüzden hem Türkçe hem standart küçültme denenir.
 

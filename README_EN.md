@@ -86,8 +86,10 @@ The thresholded version is the `score_threshold=0.7` row in the table.
 ### Held-out template set
 
 The main templates were written by the same person who wrote the recognizers. There is also a separate 24-template
-set (`HELDOUT_TEMPLATES`, `benchmark/generate.py`) written by a separate LLM agent from the field list alone, without
-access to the code; the recognizers were not tuned on it. Results: `benchmark/results/2026-11-15-heldout.md`.
+set (`HELDOUT_TEMPLATES`, `benchmark/generate.py`) written by a separate LLM agent with no access to the code. The agent
+was given the field list, which fields are PII, and a requested mix: 12 templates with PII (at least 3 without cue words,
+at least 2 with mistyped fields) and 12 without PII (including numbers near PII-related words). The value generators are
+shared with the main set; only the sentence templates are independent. The recognizers were not tuned on this set. Results: `benchmark/results/2026-11-15-heldout.md`.
 
 | System | Entity | Precision | Recall | F1 | Masked |
 |---|---|---|---|---|---|
@@ -102,7 +104,9 @@ access to the code; the recognizers were not tuned on it. Results: `benchmark/re
 
 Over-masking: built-in recognizers 0.61, presidio-tr 0.17 (from the held-out file).
 
-On this set, recall with `score_threshold=0.7` is `TR_NATIONAL_ID` 0.71, `TR_TAX_ID` 0.47, `IBAN_CODE` 0.72, `PHONE_NUMBER` 0.49; for VKN, IBAN and phone the threshold costs more here than on the main set.
+Phone recall below the baseline (0.76 vs 0.81) is by design: a bare 10-digit number with no prefix and no context is not masked (the `{name} {bare_phone}` template); the baseline catches those at 0.25 precision.
+
+On this set, recall with `score_threshold=0.7` is `TR_NATIONAL_ID` 0.71, `TR_TAX_ID` 0.47, `IBAN_CODE` 0.72, `PHONE_NUMBER` 0.49; thresholded recall is lower than on the main set for VKN, IBAN and phone.
 
 ## Install and usage
 
@@ -143,6 +147,7 @@ therefore requires context; a valid VKN written without context is not masked.
 - Stem prefixes instead of lemmas: inflected forms like "hesabınız" and "hesaplarım" match the `hesap` / `hesab` stems.
 - Short stems (`tc`, `vkn`, `tel`, `gsm`, `cep`) match whole words only, so "telif" (copyright) and "cephe" (facade)
   are not context. `ulaş` is narrowed to its verb forms (`ulaşa`, `ulaşın`, `ulaşıl`), so "ulaşım" (transport) is not.
+  Common compound/suffixed forms are listed as separate stems (`tcno`, `tckimlik`, `vkno`, `telno`, `gsmno`, `ceptel`, `cepno`, `cepte`, `cebim`, `ulaşm`); other suffixed forms such as `telim`, `telden` are not context.
 - Softened consonants are listed in the stems: `hesap`/`hesab`, `kimlik`/`kimliğ`.
 - Turkish lowercasing turns "IBAN" into "ıban", so both Turkish and standard lowercasing are tried.
 

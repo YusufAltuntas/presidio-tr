@@ -122,6 +122,7 @@ Plan yazılırken presidio-analyzer 2.2.366 ve LiteLLM 1.109.1 ile bir deneme (s
    karşılaştırılır. Ünsüz yumuşaması için kökün iki hali de listelenir (`hesap`/`hesab`, `kimlik`/`kimliğ`).
    Türkçe küçültme kısaltmaları bozar ("IBAN" → "ıban"), bu yüzden hem Türkçe hem standart küçültme denenir.
    Tanıyıcılara Presidio `context` verilmez, böylece Presidio'nun güçlendiricisi devreye girmez.
+   ≤3 karakterli kökler (`tc`, `vkn`, `tel`, `gsm`, `cep`) yalnızca tam kelimeyle eşleşir ("telif", "cephe" bağlam sayılmasın diye); yaygın bileşik biçimler (`tcno`, `vkno`, `telno` …) ayrı önek kökü olarak listelenir. Nokta hem silinir hem boşluğa çevrilir ("T.C." → `tc`, "Tel.No" → `tel`).
 3. **Aynı türden iki değer — çözüldü.** LiteLLM etiketleri kendisi numaralıyor (`<TR_NATIONAL_ID_1>`,
    `<TR_NATIONAL_ID_2>`); e2e testi yine de doğrular.
 4. **Langfuse'a ne gidiyor — çözüldü.** E2E testi, geri açılan cevabın Langfuse'a ham PII olarak gittiğini
