@@ -24,6 +24,8 @@ Issues = "https://github.com/YusufAltuntas/presidio-tr/issues"
 
 [project.optional-dependencies]
 server = ["fastapi>=0.115", "uvicorn>=0.30"]
+# İsim tanıma (PERSON) için Hugging Face NER modeli; model ilk kullanımda indirilir (~440 MB).
+ner = ["transformers>=4.44", "torch>=2.4"]
 
 [dependency-groups]
 dev = [
@@ -37,6 +39,15 @@ dev = [
 benchmark = [
     "en_core_web_sm @ https://github.com/explosion/spacy-models/releases/download/en_core_web_sm-3.8.0/en_core_web_sm-3.8.0-py3-none-any.whl",
 ]
+
+[tool.uv.sources]
+# Linux'ta (Docker imajı) torch'un CUDA'sız CPU sürümü kurulur; varsayılan sürüm GPU kütüphaneleriyle ~2 GB tutar.
+torch = [{ index = "pytorch-cpu", marker = "sys_platform == 'linux'" }]
+
+[[tool.uv.index]]
+name = "pytorch-cpu"
+url = "https://download.pytorch.org/whl/cpu"
+explicit = true
 
 [build-system]
 requires = ["hatchling"]

@@ -1,7 +1,10 @@
 """Presidio analyzer HTTP API'siyle uyumlu, presidio-tr tanıyıcılarını kullanan sunucu.
 
 LiteLLM'in Presidio guardrail'i bu sunucunun /analyze ucunu çağırır.
+PRESIDIO_TR_NER=1 ortam değişkeni isim tanımayı (PERSON) açar; `presidio-tr[ner]` ekini ister.
 """
+
+import os
 
 from fastapi import FastAPI, HTTPException
 from pydantic import BaseModel
@@ -9,7 +12,7 @@ from pydantic import BaseModel
 from presidio_tr import LANGUAGE, build_analyzer
 
 app = FastAPI(title="presidio-tr analyzer")
-analyzer = build_analyzer()
+analyzer = build_analyzer(ner=os.environ.get("PRESIDIO_TR_NER") == "1")
 
 
 class AnalyzeRequest(BaseModel):
