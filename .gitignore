@@ -18,5 +18,5 @@ benchmark/data/
 
 # Yerel ayarlar ve yalnızca yerelde tutulan dokümanlar
 .claude/settings.local.json
-docs/superpowers/plans/
+docs/plans/
 .DS_Store
