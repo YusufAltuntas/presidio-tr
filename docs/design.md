@@ -10,7 +10,7 @@ guardrail'ine takılarak, Türkçe metindeki kişisel verilerin LLM sağlayıcı
 cevapta geri açılmasını sağlar. Etkisi sentetik Türkçe benchmark ile ölçülür.
 
 **Neden:** Presidio'da `TrNationalIdRecognizer` (yalnızca checksum, varsayılan olarak kapalı) ve
-`TrLicensePlateRecognizer` var; VKN tanıyıcısı yok, Türkiye'ye özel telefon tanıyıcısı yok (2.2.366). `presidio-tr` VKN'yi,
+`TrLicensePlateRecognizer` var; VKN tanıyıcısı yok; hazır `PhoneRecognizer`'ın varsayılan bölgelerinde TR yok (2.2.366, `supported_regions=["TR"]` ile kurulabilir). `presidio-tr` VKN'yi,
 TCKN/VKN/IBAN için yazım hatası kademesini (checksum geçersiz + bağlam → 0.6), Türkiye'ye özel telefonu ve
 Türkçe ek toleranslı bağlam eşleştirmeyi ekler. Varsayılan `AnalyzerEngine()` hazır tanıyıcıları yalnızca `en`
 için kaydeder. Geri alınabilir maskeleme (`output_parse_pii`) ve streaming desteği LiteLLM'de zaten var;
@@ -172,7 +172,8 @@ Plan yazılırken presidio-analyzer 2.2.366 ve LiteLLM 1.109.1 ile bir deneme (s
 - Tüm değerler (tarih dahil) seed'li `random.Random`'dan üretilir; aynı seed her gün aynı veriyi verir.
 - Karşılaştırma, dört sistem: (a) varsayılan Presidio — `language=en` ve hazır tanıyıcılarla, yani Türkçe
   kurulumu olmayan bir kullanıcının elinde olan; (b) adil taban çizgisi — `language=tr`, Presidio'nun hazır
-  tanıyıcıları ve kendi `TrNationalIdRecognizer`'ı (varsayılan kapalı, elle eklenir); (c) Presidio +
+  tanıyıcıları ve kendi `TrNationalIdRecognizer`'ı (varsayılan kapalı, elle eklenir); hazır `PhoneRecognizer`'ın
+  bölge listesinde TR olmadığı için `supported_regions=["TR"]` ile kurulmuşu kullanılır; (c) Presidio +
   `presidio-tr`, `language=tr`; (d) (c)'nin `score_threshold=0.7` ile çalıştırılmışı —
   bağlam kademesi kapalı, kesinlik tercih edenler için. Varlık türü başına P/R/F1.
 - Bağlamsız zor PII şablonları (bağlamsız VKN, öneksiz telefon) bilerek eklenir; recall şablon bağlamıyla şişmesin.

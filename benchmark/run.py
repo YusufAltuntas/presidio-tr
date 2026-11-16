@@ -12,7 +12,7 @@ from pathlib import Path
 
 from presidio_analyzer import AnalyzerEngine, RecognizerRegistry
 from presidio_analyzer.nlp_engine import NlpEngineProvider
-from presidio_analyzer.predefined_recognizers import TrNationalIdRecognizer
+from presidio_analyzer.predefined_recognizers import PhoneRecognizer, TrNationalIdRecognizer
 
 from presidio_tr import BlankTurkishNlpEngine, build_analyzer
 
@@ -95,12 +95,15 @@ def vanilla_turkish_predictor() -> Callable[[str], list[Span]]:
     """Adil taban çizgisi: Türkçe motor, Presidio'nun hazır tanıyıcıları ve kendi TrNationalIdRecognizer'ı.
 
     TrNationalIdRecognizer presidio-analyzer'da varsayılan olarak kapalı gelir; burada elle eklenir.
+    Hazır PhoneRecognizer'ın bölge listesinde TR yoktur; Türkiye bölgesiyle kurulmuş olanı kullanılır.
     """
     nlp_engine = BlankTurkishNlpEngine()
     nlp_engine.load()
     registry = RecognizerRegistry(supported_languages=["tr"])
     registry.load_predefined_recognizers(languages=["tr"], nlp_engine=nlp_engine)
     registry.add_recognizer(TrNationalIdRecognizer())
+    registry.remove_recognizer("PhoneRecognizer", language="tr")
+    registry.add_recognizer(PhoneRecognizer(supported_language="tr", supported_regions=["TR"]))
     analyzer = AnalyzerEngine(registry=registry, nlp_engine=nlp_engine, supported_languages=["tr"])
     return lambda text: [(r.start, r.end, r.entity_type) for r in analyzer.analyze(text, language="tr")]
 

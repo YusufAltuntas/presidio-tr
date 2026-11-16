@@ -37,6 +37,12 @@ def test_vanilla_turkish_predictor_detects_valid_tckn_as_national_id():
     assert any(entity == "TR_NATIONAL_ID" and text[start:end] == "10000000146" for start, end, entity in spans)
 
 
+def test_vanilla_turkish_predictor_uses_turkish_phone_region():
+    # Varsayılan bölgelerle (US…) bu VKN telefon sayılır; TR bölgesiyle sayılmaz.
+    spans = vanilla_turkish_predictor()("VKN: 1234567890")
+    assert not [s for s in spans if s[2] == "PHONE_NUMBER"]
+
+
 def test_turkish_predictor_threshold_drops_context_tier():
     text = "Cep: 5321234567"
     assert turkish_predictor()(text) == [(5, 15, "PHONE_NUMBER")]
