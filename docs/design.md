@@ -24,11 +24,12 @@ Paket Microsoft'un resmi projesi değildir; README'nin tepesinde bu açıkça ya
 - Tanıyıcılar: TC kimlik no, VKN, TR IBAN, TR telefon. `build_analyzer()` Presidio'nun hazır e-posta ve kredi kartı
   tanıyıcılarını da `tr` için ekler (`tr` registry'sine kendiliğinden gelmezler); hazır telefon ve tarih tanıyıcıları
   Türkçe metinde sipariş/referans numaralarını yanlış maskelediği için eklenmez.
+- İsteğe bağlı isim tanıma (`PERSON`, `ner` eki; aşağıdaki "İsim tanıma" bölümü).
 - Benchmark: varsayılan Presidio, hazır tanıyıcılı `tr` Presidio ve Presidio + `presidio-tr` karşılaştırması.
 - Demo: `docker compose` ile LiteLLM + Presidio (paketli imaj) + Langfuse.
 - Anahtar başı bütçe ve end-user attribution — yalnızca LiteLLM config'i, kod yok.
 
-**v1'de yok:** isim/adres (NER), plaka (Presidio'da var), kendi guardrail kodumuz, Presidio'ya upstream PR
+**v1'de yok:** adres, plaka (Presidio'da var), kendi guardrail kodumuz, Presidio'ya upstream PR
 (v1 sonrası ayrı iş), PyPI yayını (en son, isteğe bağlı).
 
 ## Mimari
@@ -93,6 +94,20 @@ Telefonun checksum'ı yok; format (`+90`, `0`, `5xx`, boşluk/tire varyantları)
 geçer. Bu yüzden VKN yakınında bağlam kelimesi yoksa checksum geçerli olsa da atlanır; bağlam varsa yukarıdaki iki
 kademe uygulanır. Bedeli: bağlamsız yazılmış gerçek VKN maskelenmez. (TCKN'de iki kontrol hanesi var, rastgele
 geçme ~%1; IBAN'da `TR` öneki + mod-97 — bunlarda bağlam zorunlu değil.)
+
+### İsim tanıma (isteğe bağlı)
+
+- Presidio'nun hazır `HuggingFaceNerRecognizer`'ı ile Hugging Face'teki `akdeniz27/bert-base-turkish-cased-ner`
+  (MIT, en çok indirilen Türkçe NER modeli). spaCy üzerinden gitmez: ekli kelimelerde ("Ayşe'nin") spaCy token
+  sınırları model çıktısıyla hizalanmıyor; bu tanıyıcı modelin kendi tokenizer'ını kullanır.
+- `aggregation_strategy="first"`: varsayılan `simple`, küçük/büyük harfle yazılmış isimleri alt kelime parçalarına
+  bölüyordu ("ayşe yılmaz" → "ay" + "şe yılmaz", "AHMET" → "AH" + "MET").
+- Yalnızca `PER` → `PERSON` tutulur. Presidio eşlenmemiş etiketleri olduğu gibi geçirir; yer (`LOC`) ve kurum (`ORG`)
+  maskelenirse şube/şehir adları da gider, kullanışlılık düşer.
+- Varsayılan kapalıdır: transformers + torch ve ~440 MB model ister, CPU'da cümle başına ~50 ms ekler. Docker imajında
+  `NER=1` build argümanıyla açılır; Linux'ta torch'un CPU sürümü kurulur (`tool.uv.sources`), model imaja gömülür.
+- Bilinen hatalar: isme benzeyen sıradan kelimeler ("Barış görüşmeleri") maskelenir, bazı isimler kaçar
+  ("Umut Barış Gül"de "Gül"); skor bazen 0.7'nin altındadır, eşikli kullanımda isim düşebilir.
 
 ## Veri akışı
 
@@ -179,6 +194,9 @@ Plan yazılırken presidio-analyzer 2.2.366 ve LiteLLM 1.109.1 ile bir deneme (s
   `presidio-tr`, `language=tr`; (d) (c)'nin `score_threshold=0.7` ile çalıştırılmışı —
   bağlam kademesi kapalı, kesinlik tercih edenler için. Varlık türü başına P/R/F1.
 - Bağlamsız zor PII şablonları (bağlamsız VKN, öneksiz telefon) bilerek eklenir; recall şablon bağlamıyla şişmesin.
+- Şablonlardaki `{name}` alanı `PERSON` olarak etiketlenir; isim tanımalı sistem `--ner` ile eklenir.
+- **Elle yazılmış set:** `benchmark/handwritten.txt`, `[değer](VARLIK)` işaretli cümleler; isme benzeyen sıradan
+  kelimeler gibi şablonlarda olmayan zor durumlar için. Tanıyıcıları görmeden yazılır.
 - **Bağımsız set:** `HELDOUT_TEMPLATES`, koda erişimi olmayan ayrı bir LLM ajanına yalnızca alan listesi, hangi alanın PII olduğu ve bir dağılım isteğiyle yazdırılmış 24 şablon: 12 PII'li (en az 3'ü ipucu kelimesiz, en az 2'si yazım hatalı alanla) ve 12 PII'siz (PII kelimelerine yakın numaralar dahil). Değer üreteçleri ana setle ortaktır; yalnızca cümle şablonları bağımsızdır.
   Tanıyıcılar bu sete göre ayarlanmaz; sonucu ana setten ayrı raporlanır.
 - Tür gözetmeyen "maskelenen" oranı da raporlanır: varsayılan Presidio TC kimliği yanlış türle

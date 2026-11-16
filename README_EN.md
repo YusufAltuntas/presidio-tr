@@ -2,7 +2,8 @@
 
 [Türkçe](https://github.com/YusufAltuntas/presidio-tr/blob/main/README.md) · [English](https://github.com/YusufAltuntas/presidio-tr/blob/main/README_EN.md)
 
-Turkish personal data (PII) recognizers for Microsoft Presidio: national ID (TCKN), tax ID (VKN), TR IBAN, TR phone.
+Turkish personal data (PII) recognizers for Microsoft Presidio: national ID (TCKN), tax ID (VKN), TR IBAN, TR phone,
+and optional person names.
 Ships with a LiteLLM gateway demo: personal data in Turkish text is masked before it reaches the LLM provider and
 restored in the answer. This is not an official Microsoft project; it is a community package.
 
@@ -12,6 +13,8 @@ restored in the answer. This is not an official Microsoft project; it is a commu
 - TR phone F1: 0.72 → 0.89. IBAN F1: 0.93 → 1.00.
 - A TCKN/VKN/IBAN with one mistyped digit is still masked when a context word is nearby. The cost: more non-PII
   numbers get masked (see Trade-off below).
+- Names (optional, Turkish NER model): F1 0.98 on synthetic data. Synthetic names are easy; not yet measured on
+  hand-written hard sentences.
 - Gateway demo: the LLM provider only sees masked text; so does Langfuse while the analyzer and anonymizer are healthy.
 
 ## Install and usage
@@ -34,6 +37,17 @@ No model download is needed (blank spaCy `tr` pipeline). Entity names match upst
 `TR_TAX_ID`, `IBAN_CODE`, `PHONE_NUMBER`). `build_analyzer()` also adds Presidio's built-in email (`EMAIL_ADDRESS`)
 and credit card (`CREDIT_CARD`) recognizers. `add_turkish_recognizers(registry)` adds only the four Turkish
 recognizers and only works with a registry set up for `tr`; see the `build_analyzer()` source (`src/presidio_tr/__init__.py`) for the correct setup.
+
+Name recognition (`PERSON`) is optional: it uses the `akdeniz27/bert-base-turkish-cased-ner` model from Hugging Face,
+needs transformers + torch, and downloads the model on first use (~440 MB). It adds ~50 ms per sentence on CPU.
+
+```bash
+uv sync --extra ner
+```
+
+```python
+analyzer = build_analyzer(ner=True)
+```
 
 ## How it works
 
@@ -59,26 +73,34 @@ F1 per entity type. Over-masking: share of non-PII numbers (order no, reference 
 
 **Main set** (1000 sentences):
 
-| System | TCKN | VKN | IBAN | Phone | Over-masking |
-|---|---|---|---|---|---|
-| Presidio, default (`en`) | 0.00 | 0.00 | 0.93 | 0.51 | 1.00 |
-| Presidio set up for Turkish (fair baseline) | 0.78 | 0.00 | 0.93 | 0.72 | 0.10 |
-| Presidio + presidio-tr | 0.81 | 0.79 | 1.00 | 0.89 | 0.45 |
-| Presidio + presidio-tr, `score_threshold=0.7` | 0.78 | 0.77 | 0.93 | 0.87 | 0.02 |
+| System | TCKN | VKN | IBAN | Phone | Name | Over-masking |
+|---|---|---|---|---|---|---|
+| Presidio, default (`en`) | 0.00 | 0.00 | 0.93 | 0.51 | 0.34 | 1.00 |
+| Presidio set up for Turkish (fair baseline) | 0.78 | 0.00 | 0.93 | 0.72 | 0.00 | 0.10 |
+| Presidio + presidio-tr | 0.81 | 0.79 | 1.00 | 0.89 | — | 0.45 |
+| Presidio + presidio-tr, `score_threshold=0.7` | 0.78 | 0.77 | 0.93 | 0.87 | — | 0.02 |
+| Presidio + presidio-tr, `ner=True` | 0.81 | 0.79 | 1.00 | 0.89 | 0.98 | 0.45 |
 
 **Held-out set** (24 templates written by a separate LLM agent with no access to the code):
 
-| System | TCKN | VKN | IBAN | Phone | Over-masking |
-|---|---|---|---|---|---|
-| Presidio, default (`en`) | 0.00 | 0.00 | 0.83 | 0.38 | 1.00 |
-| Presidio set up for Turkish (fair baseline) | 0.82 | 0.00 | 0.83 | 0.69 | 0.11 |
-| Presidio + presidio-tr | 0.88 | 0.77 | 1.00 | 0.85 | 0.18 |
-| Presidio + presidio-tr, `score_threshold=0.7` | 0.82 | 0.65 | 0.83 | 0.65 | 0.01 |
+| System | TCKN | VKN | IBAN | Phone | Name | Over-masking |
+|---|---|---|---|---|---|---|
+| Presidio, default (`en`) | 0.00 | 0.00 | 0.83 | 0.38 | 0.46 | 1.00 |
+| Presidio set up for Turkish (fair baseline) | 0.82 | 0.00 | 0.83 | 0.69 | 0.00 | 0.11 |
+| Presidio + presidio-tr | 0.88 | 0.77 | 1.00 | 0.85 | — | 0.18 |
+| Presidio + presidio-tr, `score_threshold=0.7` | 0.82 | 0.65 | 0.83 | 0.65 | — | 0.01 |
+| Presidio + presidio-tr, `ner=True` | 0.88 | 0.77 | 1.00 | 0.85 | 1.00 | 0.18 |
 
 Fair baseline: `language="tr"`, Presidio's built-in recognizers, `TrNationalIdRecognizer` enabled by hand, and
 `PhoneRecognizer` set up with `supported_regions=["TR"]`. Precision, recall and the type-agnostic masked rate are in
 the results files: [`benchmark/results/2026-11-16.md`](benchmark/results/2026-11-16.md),
-[`2026-11-16-heldout.md`](benchmark/results/2026-11-16-heldout.md).
+[`2026-11-16-heldout.md`](benchmark/results/2026-11-16-heldout.md). "—": name recognition off.
+
+The name results are optimistic: in the templates, names are capitalized full names in obvious places ("Sayın …",
+"… adına"), and there are no ordinary words that look like names ("Barış görüşmeleri", peace talks). A separate
+hand-written set has a place for that ([`benchmark/handwritten.txt`](benchmark/handwritten.txt), still empty).
+Model scores sometimes fall below 0.7 ("Yılmaz" in "Ayşe Yılmaz" scores 0.58); with `score_threshold=0.7` such names are
+not masked.
 
 The data is entirely synthetic (Faker `tr_TR` + templates, seed 42). It deliberately includes non-PII numbers next
 to context words ("Kimlik doğrulama kodunuz ..." / "Your ID verification code ...") and context-free hard PII cases.
@@ -87,7 +109,10 @@ To reproduce:
 ```bash
 uv sync --group benchmark && uv run python -m benchmark.generate --n 1000 --seed 42 && uv run python -m benchmark.run
 uv run python -m benchmark.generate --templates heldout --out benchmark/data/tr_pii_heldout.jsonl && uv run python -m benchmark.run --data benchmark/data/tr_pii_heldout.jsonl --tag heldout
+uv run python -m benchmark.handwritten && uv run python -m benchmark.run --data benchmark/data/tr_pii_handwritten.jsonl --tag handwritten
 ```
+
+For the name row, install with `uv sync --group benchmark --extra ner` and add `--ner` to `benchmark.run`.
 
 ### Trade-off
 
@@ -141,7 +166,7 @@ section of [`docs/design.md`](docs/design.md).
 ## Tests
 
 ```bash
-uv run pytest                                                 # unit tests (118)
+uv run pytest                                                 # unit tests (127; name tests are skipped without the `ner` extra)
 set -a && . deploy/.env && set +a && uv run pytest -m e2e     # end-to-end (7)
 ```
 
@@ -150,7 +175,8 @@ pre-commit runs gitleaks + ruff (`uvx pre-commit install`).
 
 ## Known limitations
 
-- Names and addresses are not recognized (no NER).
+- Addresses are not recognized. Name recognition is optional; ordinary words that look like names ("Barış",
+  "Umut") can be masked, and names can be missed ("Gül" in "Umut Barış Gül").
 - A checksum-invalid TCKN with no context is not masked; neither is a VKN without context.
 - Unsupported forms: spaced TCKN (`100 000 001 46`), IBAN with a space or hyphens after `TR` (`TR 33 …`,
   `TR33-0006-…`), dotted phone (`0532.123.45.67`), 0850/0800 and 444 numbers.

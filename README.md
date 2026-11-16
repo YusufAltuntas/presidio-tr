@@ -2,7 +2,8 @@
 
 [Türkçe](https://github.com/YusufAltuntas/presidio-tr/blob/main/README.md) · [English](https://github.com/YusufAltuntas/presidio-tr/blob/main/README_EN.md)
 
-Microsoft Presidio için Türkçe kişisel veri (PII) tanıyıcıları: TC kimlik no, VKN, TR IBAN, TR telefon.
+Microsoft Presidio için Türkçe kişisel veri (PII) tanıyıcıları: TC kimlik no, VKN, TR IBAN, TR telefon ve isteğe bağlı
+isim.
 Bir LiteLLM gateway demosuyla birlikte gelir: Türkçe metindeki kişisel veri LLM sağlayıcısına gitmeden maskelenir,
 cevapta geri açılır. Microsoft'un resmi projesi değildir; topluluk paketidir.
 
@@ -12,6 +13,8 @@ cevapta geri açılır. Microsoft'un resmi projesi değildir; topluluk paketidir
 - TR telefon F1: 0.72 → 0.89. IBAN F1: 0.93 → 1.00.
 - Bir hanesi yanlış yazılmış TCKN/VKN/IBAN, yanında bağlam kelimesi varsa yine maskelenir. Bedeli:
   PII olmayan sayıların daha çoğu maskelenir (aşağıdaki Ödünleşim).
+- İsim (isteğe bağlı, Türkçe NER modeli): sentetik veride F1 0.98. Sentetik isimler kolay; elle yazılmış zor
+  cümlelerle henüz ölçülmedi.
 - Gateway demosu: LLM sağlayıcısı yalnızca maskeli metni görür; Langfuse da analyzer ve anonymizer sağlıklıyken.
 
 ## Kurulum ve kullanım
@@ -34,6 +37,17 @@ Model indirmek gerekmez (boş spaCy `tr` pipeline'ı). Varlık adları upstream 
 `TR_TAX_ID`, `IBAN_CODE`, `PHONE_NUMBER`). `build_analyzer()` Presidio'nun hazır e-posta (`EMAIL_ADDRESS`) ve kredi
 kartı (`CREDIT_CARD`) tanıyıcılarını da ekler. `add_turkish_recognizers(registry)` yalnızca dört Türkçe tanıyıcıyı
 ekler ve yalnızca `tr` için kurulmuş bir registry ile çalışır; doğru kurulum için `build_analyzer()` kaynağına bakın (`src/presidio_tr/__init__.py`).
+
+İsim tanıma (`PERSON`) isteğe bağlıdır: Hugging Face'teki `akdeniz27/bert-base-turkish-cased-ner` modelini kullanır,
+transformers + torch ister ve model ilk kullanımda indirilir (~440 MB). CPU'da cümle başına ~50 ms ekler.
+
+```bash
+uv sync --extra ner
+```
+
+```python
+analyzer = build_analyzer(ner=True)
+```
 
 ## Nasıl çalışır
 
@@ -58,26 +72,33 @@ F1, varlık türü başına. Yanlış maskeleme: PII olmayan sayıların (sipari
 
 **Ana set** (1000 cümle):
 
-| Sistem | TCKN | VKN | IBAN | Telefon | Yanlış maskeleme |
-|---|---|---|---|---|---|
-| Presidio, varsayılan (`en`) | 0.00 | 0.00 | 0.93 | 0.51 | 1.00 |
-| Presidio, Türkçe kurulmuş (adil taban çizgisi) | 0.78 | 0.00 | 0.93 | 0.72 | 0.10 |
-| Presidio + presidio-tr | 0.81 | 0.79 | 1.00 | 0.89 | 0.45 |
-| Presidio + presidio-tr, `score_threshold=0.7` | 0.78 | 0.77 | 0.93 | 0.87 | 0.02 |
+| Sistem | TCKN | VKN | IBAN | Telefon | İsim | Yanlış maskeleme |
+|---|---|---|---|---|---|---|
+| Presidio, varsayılan (`en`) | 0.00 | 0.00 | 0.93 | 0.51 | 0.34 | 1.00 |
+| Presidio, Türkçe kurulmuş (adil taban çizgisi) | 0.78 | 0.00 | 0.93 | 0.72 | 0.00 | 0.10 |
+| Presidio + presidio-tr | 0.81 | 0.79 | 1.00 | 0.89 | — | 0.45 |
+| Presidio + presidio-tr, `score_threshold=0.7` | 0.78 | 0.77 | 0.93 | 0.87 | — | 0.02 |
+| Presidio + presidio-tr, `ner=True` | 0.81 | 0.79 | 1.00 | 0.89 | 0.98 | 0.45 |
 
 **Bağımsız set** (tanıyıcıları görmeden, koda erişimi olmayan ayrı bir LLM ajanına yazdırılmış 24 şablon):
 
-| Sistem | TCKN | VKN | IBAN | Telefon | Yanlış maskeleme |
-|---|---|---|---|---|---|
-| Presidio, varsayılan (`en`) | 0.00 | 0.00 | 0.83 | 0.38 | 1.00 |
-| Presidio, Türkçe kurulmuş (adil taban çizgisi) | 0.82 | 0.00 | 0.83 | 0.69 | 0.11 |
-| Presidio + presidio-tr | 0.88 | 0.77 | 1.00 | 0.85 | 0.18 |
-| Presidio + presidio-tr, `score_threshold=0.7` | 0.82 | 0.65 | 0.83 | 0.65 | 0.01 |
+| Sistem | TCKN | VKN | IBAN | Telefon | İsim | Yanlış maskeleme |
+|---|---|---|---|---|---|---|
+| Presidio, varsayılan (`en`) | 0.00 | 0.00 | 0.83 | 0.38 | 0.46 | 1.00 |
+| Presidio, Türkçe kurulmuş (adil taban çizgisi) | 0.82 | 0.00 | 0.83 | 0.69 | 0.00 | 0.11 |
+| Presidio + presidio-tr | 0.88 | 0.77 | 1.00 | 0.85 | — | 0.18 |
+| Presidio + presidio-tr, `score_threshold=0.7` | 0.82 | 0.65 | 0.83 | 0.65 | — | 0.01 |
+| Presidio + presidio-tr, `ner=True` | 0.88 | 0.77 | 1.00 | 0.85 | 1.00 | 0.18 |
 
 Adil taban çizgisi: `language="tr"`, Presidio'nun hazır tanıyıcıları, elle açılan `TrNationalIdRecognizer` ve
 `supported_regions=["TR"]` ile kurulmuş `PhoneRecognizer`. Precision, recall ve tür gözetmeyen maskeleme oranı
 sonuç dosyalarında: [`benchmark/results/2026-11-16.md`](benchmark/results/2026-11-16.md),
-[`2026-11-16-heldout.md`](benchmark/results/2026-11-16-heldout.md).
+[`2026-11-16-heldout.md`](benchmark/results/2026-11-16-heldout.md). "—": isim tanıma kapalı.
+
+İsim sonuçları iyimserdir: şablonlarda isimler büyük harfle, tam ad olarak ve "Sayın", "adına" gibi belirgin yerlerde
+geçer; "Barış görüşmeleri" gibi isme benzeyen sıradan kelimeler yoktur. Bu yüzden elle yazılmış ayrı bir set
+için yer açıldı ([`benchmark/handwritten.txt`](benchmark/handwritten.txt), henüz boş). Model skorları bazen 0.7'nin
+altında kalır ("Ayşe Yılmaz"da "Yılmaz" 0.58); `score_threshold=0.7` ile bu isimler maskelenmez.
 
 Veri tamamen sentetiktir (Faker `tr_TR` + şablonlar, seed 42). Bağlam kelimesinin yanında duran PII olmayan
 sayılar ("Kimlik doğrulama kodunuz ...") ve bağlamsız zor PII örnekleri bilerek eklenmiştir. Yeniden üretmek için:
@@ -85,7 +106,10 @@ sayılar ("Kimlik doğrulama kodunuz ...") ve bağlamsız zor PII örnekleri bil
 ```bash
 uv sync --group benchmark && uv run python -m benchmark.generate --n 1000 --seed 42 && uv run python -m benchmark.run
 uv run python -m benchmark.generate --templates heldout --out benchmark/data/tr_pii_heldout.jsonl && uv run python -m benchmark.run --data benchmark/data/tr_pii_heldout.jsonl --tag heldout
+uv run python -m benchmark.handwritten && uv run python -m benchmark.run --data benchmark/data/tr_pii_handwritten.jsonl --tag handwritten
 ```
+
+İsim satırı için `uv sync --group benchmark --extra ner` ile kurup `benchmark.run`'a `--ner` ekleyin.
 
 ### Ödünleşim
 
@@ -139,7 +163,7 @@ olduğu (`presidio_filter_scope: input`, ikinci `logging_only` guardrail'i) [`do
 ## Testler
 
 ```bash
-uv run pytest                                                 # birim testler (118)
+uv run pytest                                                 # birim testler (127; `ner` eki yoksa isim testleri atlanır)
 set -a && . deploy/.env && set +a && uv run pytest -m e2e     # uçtan uca (7)
 ```
 
@@ -148,7 +172,8 @@ E2E testler çalışan compose yığınını ve bir OpenAI anahtarını ister. C
 
 ## Bilinen sınırlamalar
 
-- İsim ve adres tanınmaz (NER yok).
+- Adres tanınmaz. İsim tanıma isteğe bağlıdır; isme benzeyen sıradan kelimeler ("Barış", "Umut") yanlış
+  maskelenebilir, isim kaçabilir ("Umut Barış Gül"de "Gül").
 - Bağlamsız ve checksum'ı bozuk TCKN maskelenmez; bağlamsız VKN de maskelenmez.
 - Desteklenmeyen yazımlar: boşluklu TCKN (`100 000 001 46`), `TR` sonrası boşluklu ya da tireli IBAN (`TR 33 …`,
   `TR33-0006-…`), noktalı telefon (`0532.123.45.67`), 0850/0800 ve 444'lü numaralar.
