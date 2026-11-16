@@ -166,8 +166,9 @@ Plan yazılırken presidio-analyzer 2.2.366 ve LiteLLM 1.109.1 ile bir deneme (s
 - **Zor negatifler:** bağlam kelimesi taşıyan ama PII olmayan sayılar ("Kimlik doğrulama kodunuz …", "Vergi dairesi
   başvuru numaranız …"). Bunlar olmadan 0.6 kademesinin yanlış pozitifleri hiç ölçülmez ve benchmark kendi
   şablonlarıyla kendini doğrular.
-- Negatif sayılar checksum'a göre süzülür (sipariş no geçerli TCKN, referans no geçerli VKN olamaz); aksi halde
-  gerçek PII "PII değil" diye etiketlenir.
+- Negatif sayılar checksum'a göre süzülmez. Tesadüfen checksum'ı tutan sipariş/referans no da PII değildir ve
+  gerçek trafikte vardır (rastgele 11 hanelilerin ~%1'i TCKN, 10 hanelilerin ~%10'u VKN checksum'ını tutar).
+  Süzmek yanlış maskelemeyi, özellikle eşikli sistemde, yapay olarak sıfıra çeker.
 - Tüm değerler (tarih dahil) seed'li `random.Random`'dan üretilir; aynı seed her gün aynı veriyi verir.
 - Karşılaştırma, dört sistem: (a) varsayılan Presidio — `language=en` ve hazır tanıyıcılarla, yani Türkçe
   kurulumu olmayan bir kullanıcının elinde olan; (b) adil taban çizgisi — `language=tr`, Presidio'nun hazır

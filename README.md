@@ -7,7 +7,8 @@ Microsoft'un resmi projesi değildir; topluluk paketidir.
 
 **Kısaca** (1000 sentetik cümle, adil taban çizgisine karşı):
 
-- VKN F1: 0.00 → 0.80; TR telefon F1: 0.49 → 0.90
+- TR telefon F1: 0.51 → 0.89 (Presidio'nun hazır telefon tanıyıcısına karşı).
+- VKN: Presidio'da tanıyıcısı yok; `presidio-tr` ile F1 0.79.
 - Bir hanesi yanlış yazılmış TCKN/VKN/IBAN, yanında bağlam kelimesi varsa yine maskelenir.
 - LiteLLM gateway demosu: LLM sağlayıcısı yalnızca maskeli metni görür; Langfuse da analyzer ve anonymizer sağlıklıyken.
 
@@ -32,32 +33,33 @@ Varlık adları bilerek upstream ile aynıdır (`TR_NATIONAL_ID`, `IBAN_CODE`, `
 |---|---|---|---|---|---|
 | Presidio (en, varsayılan) | TR_NATIONAL_ID | 0.00 | 0.00 | 0.00 | 1.00 |
 | Presidio (en, varsayılan) | TR_TAX_ID | 0.00 | 0.00 | 0.00 | 1.00 |
-| Presidio (en, varsayılan) | IBAN_CODE | 1.00 | 0.83 | 0.91 | 0.85 |
-| Presidio (en, varsayılan) | PHONE_NUMBER | 0.34 | 0.88 | 0.49 | 1.00 |
-| Presidio (tr, hazır tanıyıcılar + TrNationalIdRecognizer) | TR_NATIONAL_ID | 1.00 | 0.62 | 0.77 | 0.69 |
+| Presidio (en, varsayılan) | IBAN_CODE | 1.00 | 0.87 | 0.93 | 0.88 |
+| Presidio (en, varsayılan) | PHONE_NUMBER | 0.36 | 0.86 | 0.51 | 0.99 |
+| Presidio (tr, hazır tanıyıcılar + TrNationalIdRecognizer) | TR_NATIONAL_ID | 0.99 | 0.64 | 0.78 | 0.70 |
 | Presidio (tr, hazır tanıyıcılar + TrNationalIdRecognizer) | TR_TAX_ID | 0.00 | 0.00 | 0.00 | 0.91 |
-| Presidio (tr, hazır tanıyıcılar + TrNationalIdRecognizer) | IBAN_CODE | 1.00 | 0.83 | 0.91 | 0.85 |
-| Presidio (tr, hazır tanıyıcılar + TrNationalIdRecognizer) | PHONE_NUMBER | 0.34 | 0.88 | 0.49 | 0.88 |
-| Presidio + presidio-tr | TR_NATIONAL_ID | 0.77 | 0.85 | 0.81 | 0.85 |
-| Presidio + presidio-tr | TR_TAX_ID | 0.80 | 0.81 | 0.80 | 0.81 |
+| Presidio (tr, hazır tanıyıcılar + TrNationalIdRecognizer) | IBAN_CODE | 1.00 | 0.87 | 0.93 | 0.88 |
+| Presidio (tr, hazır tanıyıcılar + TrNationalIdRecognizer) | PHONE_NUMBER | 0.36 | 0.86 | 0.51 | 0.86 |
+| Presidio + presidio-tr | TR_NATIONAL_ID | 0.75 | 0.87 | 0.81 | 0.87 |
+| Presidio + presidio-tr | TR_TAX_ID | 0.78 | 0.79 | 0.79 | 0.79 |
 | Presidio + presidio-tr | IBAN_CODE | 1.00 | 1.00 | 1.00 | 1.00 |
-| Presidio + presidio-tr | PHONE_NUMBER | 0.89 | 0.91 | 0.90 | 0.91 |
-| Presidio + presidio-tr (score_threshold=0.7) | TR_NATIONAL_ID | 1.00 | 0.62 | 0.77 | 0.62 |
-| Presidio + presidio-tr (score_threshold=0.7) | TR_TAX_ID | 1.00 | 0.60 | 0.75 | 0.60 |
-| Presidio + presidio-tr (score_threshold=0.7) | IBAN_CODE | 1.00 | 0.83 | 0.91 | 0.83 |
+| Presidio + presidio-tr | PHONE_NUMBER | 0.89 | 0.88 | 0.89 | 0.88 |
+| Presidio + presidio-tr (score_threshold=0.7) | TR_NATIONAL_ID | 0.99 | 0.64 | 0.78 | 0.64 |
+| Presidio + presidio-tr (score_threshold=0.7) | TR_TAX_ID | 0.96 | 0.64 | 0.77 | 0.64 |
+| Presidio + presidio-tr (score_threshold=0.7) | IBAN_CODE | 1.00 | 0.87 | 0.93 | 0.87 |
 | Presidio + presidio-tr (score_threshold=0.7) | PHONE_NUMBER | 1.00 | 0.77 | 0.87 | 0.77 |
 
 | Sistem | Yanlış maskeleme (PII olmayan sayılar) |
 |---|---|
 | Presidio (en, varsayılan) | 1.00 |
-| Presidio (tr, hazır tanıyıcılar + TrNationalIdRecognizer) | 0.51 |
-| Presidio + presidio-tr | 0.41 |
-| Presidio + presidio-tr (score_threshold=0.7) | 0.00 |
+| Presidio (tr, hazır tanıyıcılar + TrNationalIdRecognizer) | 0.49 |
+| Presidio + presidio-tr | 0.45 |
+| Presidio + presidio-tr (score_threshold=0.7) | 0.02 |
 
 `en` satırı, Türkçe kurulumu olmayan bir kullanıcının elde ettiği sonuçtur; `tr` (hazır tanıyıcılar) satırı adil
 taban çizgisidir. "Maskelenen": türü yanlış da olsa bir tahminle örtülen PII oranı. Veri 1000 sentetik cümledir
 (Faker `tr_TR` + şablonlar, seed 42); bağlam kelimesinin yanında duran PII olmayan sayılar ("Kimlik doğrulama
-kodunuz ...") ve bağlamsız zor PII örnekleri de içerir. Sonuç dosyası: `benchmark/results/2026-11-15.md`.
+kodunuz ...") ve bağlamsız zor PII örnekleri de içerir. PII olmayan sayılar checksum'a göre süzülmez: gerçekteki
+gibi bir kısmı tesadüfen checksum'ı tutar. Sonuç dosyası: `benchmark/results/2026-11-16.md`.
 Yeniden üretmek için:
 
 ```bash
@@ -68,12 +70,15 @@ Bağımsız set: `uv run python -m benchmark.generate --templates heldout --out 
 
 Düz `uv sync` benchmark grubunun modelini yine kaldırır.
 
-### Ödünleşim: yanlış maskeleme 0.41
+### Ödünleşim: yanlış maskeleme 0.45
 
-Varsayılan Presidio'da 1.00, hazır tanıyıcılarla `tr`'de 0.51, `presidio-tr` ile 0.41. `presidio-tr`'nin yanlış
-maskelemesinin tamamı, bağlam kelimesi yakınında bulunan geçersiz checksum'lu sayıları maskeleyen 0.6 skorlu
-kademeden gelir (aşağıdaki Skorlama bölümü); `score_threshold=0.7` ile yanlış maskeleme 0.00 olur. Bu bilinçli
-bir seçimdir: güvenlik önce gelir, bir hanesi yanlış yazılmış TC kimlik no yine maskelenmelidir. 0.41 değeri
+Varsayılan Presidio'da 1.00, hazır tanıyıcılarla `tr`'de 0.49, `presidio-tr` ile 0.45. `presidio-tr`'nin yanlış
+maskelemesinin büyük kısmı, bağlam kelimesi yakınında bulunan geçersiz checksum'lu sayıları maskeleyen 0.6 skorlu
+kademeden gelir (aşağıdaki Skorlama bölümü); `score_threshold=0.7` ile yanlış maskeleme 0.02'ye iner. Kalan 0.02
+(253 negatiften 6'sı) checksum'ı tesadüfen tutan sipariş/referans numaralarıdır: rastgele 11 haneli sayıların ~%1'i
+TCKN, 10 hanelilerin ~%10'u VKN checksum'ını tutar. Bunlar 1.0 skor alır, hiçbir eşik onları ayıramaz; checksum
+tabanlı her tanıyıcının sınırıdır. Bağlam kademesi bilinçli bir seçimdir: güvenlik önce gelir, bir hanesi yanlış
+yazılmış TC kimlik no yine maskelenmelidir. 0.45 değeri
 çoğunlukla şablon karışımındaki zor negatiflerin payını yansıtır, gerçek trafikteki oranı değil. Kesinliği
 tercih ediyorsanız bağlam kademesini skor eşiğiyle kapatın:
 
@@ -89,24 +94,24 @@ Ana şablonları tanıyıcıları yazan kişi yazdı. Ayrıca, repodaki koda eri
 (`HELDOUT_TEMPLATES`, `benchmark/generate.py`). Ajana alan listesi, hangi alanın PII olduğu ve bir dağılım isteği verildi:
 12 PII'li şablon (en az 3'ü ipucu kelimesiz, en az 2'si yazım hatalı alanla) ve 12 PII'siz şablon (PII kelimelerine yakın
 numaralar dahil). Değer üreteçleri ana setle ortaktır; yalnızca cümle şablonları bağımsızdır. Tanıyıcılar bu sete göre
-ayarlanmadı. Sonuç: `benchmark/results/2026-11-15-heldout.md`.
+ayarlanmadı. Sonuç: `benchmark/results/2026-11-16-heldout.md`.
 
 | Sistem | Varlık | Precision | Recall | F1 | Maskelenen |
 |---|---|---|---|---|---|
-| Presidio (tr, hazır tanıyıcılar + TrNationalIdRecognizer) | TR_NATIONAL_ID | 1.00 | 0.71 | 0.83 | 0.76 |
-| Presidio (tr, hazır tanıyıcılar + TrNationalIdRecognizer) | TR_TAX_ID | 0.00 | 0.00 | 0.00 | 0.86 |
-| Presidio (tr, hazır tanıyıcılar + TrNationalIdRecognizer) | IBAN_CODE | 1.00 | 0.72 | 0.84 | 0.75 |
+| Presidio (tr, hazır tanıyıcılar + TrNationalIdRecognizer) | TR_NATIONAL_ID | 0.97 | 0.70 | 0.82 | 0.75 |
+| Presidio (tr, hazır tanıyıcılar + TrNationalIdRecognizer) | TR_TAX_ID | 0.00 | 0.00 | 0.00 | 0.90 |
+| Presidio (tr, hazır tanıyıcılar + TrNationalIdRecognizer) | IBAN_CODE | 1.00 | 0.71 | 0.83 | 0.74 |
 | Presidio (tr, hazır tanıyıcılar + TrNationalIdRecognizer) | PHONE_NUMBER | 0.25 | 0.81 | 0.38 | 0.81 |
-| Presidio + presidio-tr | TR_NATIONAL_ID | 0.78 | 1.00 | 0.88 | 1.00 |
-| Presidio + presidio-tr | TR_TAX_ID | 0.64 | 1.00 | 0.78 | 1.00 |
+| Presidio + presidio-tr | TR_NATIONAL_ID | 0.79 | 1.00 | 0.88 | 1.00 |
+| Presidio + presidio-tr | TR_TAX_ID | 0.63 | 1.00 | 0.77 | 1.00 |
 | Presidio + presidio-tr | IBAN_CODE | 1.00 | 1.00 | 1.00 | 1.00 |
-| Presidio + presidio-tr | PHONE_NUMBER | 1.00 | 0.76 | 0.86 | 0.76 |
+| Presidio + presidio-tr | PHONE_NUMBER | 1.00 | 0.75 | 0.85 | 0.75 |
 
-Yanlış maskeleme: hazır tanıyıcılar 0.61, presidio-tr 0.17 (heldout dosyasından).
+Yanlış maskeleme: hazır tanıyıcılar 0.63, presidio-tr 0.18, `score_threshold=0.7` ile 0.01 (heldout dosyasından).
 
-Telefonda recall'un taban çizgisinin altında kalması (0.76'ya karşı 0.81) tasarım gereğidir: öneksiz ve bağlamsız 10 haneli numara maskelenmez (`{name} {bare_phone}` şablonu); taban çizgisi bu numaraları 0.25 precision pahasına yakalıyor.
+Telefonda recall'un taban çizgisinin altında kalması (0.75'e karşı 0.81) tasarım gereğidir: öneksiz ve bağlamsız 10 haneli numara maskelenmez (`{name} {bare_phone}` şablonu); taban çizgisi bu numaraları 0.25 precision pahasına yakalıyor.
 
-Bu sette `score_threshold=0.7` ile recall: `TR_NATIONAL_ID` 0.71, `TR_TAX_ID` 0.47, `IBAN_CODE` 0.72, `PHONE_NUMBER` 0.49; eşikli recall VKN, IBAN ve telefonda ana setten düşüktür.
+Bu sette `score_threshold=0.7` ile recall: `TR_NATIONAL_ID` 0.70, `TR_TAX_ID` 0.49, `IBAN_CODE` 0.71, `PHONE_NUMBER` 0.49; eşikli recall VKN, IBAN ve telefonda ana setten düşüktür.
 
 ## Kurulum ve kullanım
 
@@ -200,7 +205,7 @@ Demo bulguları (LiteLLM 1.109.1):
 ## Testler ve geliştirme
 
 ```bash
-uv run pytest                                                 # birim testler (111)
+uv run pytest                                                 # birim testler (115)
 set -a && . deploy/.env && set +a && uv run pytest -m e2e     # uçtan uca (7)
 ```
 
@@ -212,6 +217,8 @@ Pre-commit: gitleaks + ruff (`uvx pre-commit install`). CI her push'ta ruff ve b
 - Bağlamsız ve checksum'ı bozuk TC kimlik no maskelenmez; bağlamsız VKN de maskelenmez.
 - Desteklenmeyen yazımlar: boşluklu TCKN (`100 000 001 46`), `TR` sonrası boşluklu IBAN (`TR 33 …`), 0850/0800
   numaraları.
+- Checksum'ı tesadüfen tutan PII olmayan sayılar (rastgele 11 hanelilerin ~%1'i, bağlamlı 10 hanelilerin ~%10'u)
+  1.0 skorla maskelenir; skor eşiği bunları ayıramaz.
 - Bağlam eşleştirmesi komşu etiketlere taşabilir: bir etiketin bağlam kelimesi yanındaki başka bir değeri de
   0.6 kademesine sokabilir.
 - Sızıntı garantisinin sınırı: LiteLLM'in logging hook'u bloklamaz. Çağrıdan sonra, loglamadan önce Presidio

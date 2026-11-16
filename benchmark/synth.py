@@ -3,7 +3,7 @@
 import random
 from collections.abc import Callable
 
-from presidio_tr.validators import tckn_valid, vkn_valid
+from presidio_tr.validators import vkn_valid
 
 
 def tckn(rng: random.Random) -> str:
@@ -59,16 +59,16 @@ def typo(value: str, rng: random.Random, is_valid: Callable[[str], bool]) -> str
 
 
 def order_no(rng: random.Random) -> str:
-    """TC kimliğe benzeyen ama checksum'dan geçmeyen 11 haneli sipariş numarası."""
-    while True:
-        candidate = str(rng.randint(10**10, 10**11 - 1))
-        if not tckn_valid(candidate):
-            return candidate
+    """Rastgele 11 haneli sipariş numarası.
+
+    Checksum'a göre süzülmez: gerçekteki gibi ~%1'i tesadüfen TCKN checksum'ından geçer.
+    """
+    return str(rng.randint(10**10, 10**11 - 1))
 
 
 def ref_no(rng: random.Random) -> str:
-    """VKN'ye benzeyen ama checksum'dan geçmeyen 10 haneli referans numarası."""
-    while True:
-        candidate = str(rng.randint(10**9, 10**10 - 1))
-        if not vkn_valid(candidate):
-            return candidate
+    """Rastgele 10 haneli referans numarası.
+
+    Checksum'a göre süzülmez: gerçekteki gibi ~%10'u tesadüfen VKN checksum'ından geçer.
+    """
+    return str(rng.randint(10**9, 10**10 - 1))
