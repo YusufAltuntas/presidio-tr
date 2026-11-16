@@ -122,7 +122,7 @@ Plan yazılırken presidio-analyzer 2.2.366 ve LiteLLM 1.109.1 ile bir deneme (s
    karşılaştırılır. Ünsüz yumuşaması için kökün iki hali de listelenir (`hesap`/`hesab`, `kimlik`/`kimliğ`).
    Türkçe küçültme kısaltmaları bozar ("IBAN" → "ıban"), bu yüzden hem Türkçe hem standart küçültme denenir.
    Tanıyıcılara Presidio `context` verilmez, böylece Presidio'nun güçlendiricisi devreye girmez.
-   ≤3 karakterli kökler (`tc`, `vkn`, `tel`, `gsm`, `cep`) yalnızca tam kelimeyle eşleşir ("telif", "cephe" bağlam sayılmasın diye); yaygın bileşik biçimler (`tcno`, `vkno`, `telno` …) ayrı önek kökü olarak listelenir. Nokta hem silinir hem boşluğa çevrilir ("T.C." → `tc`, "Tel.No" → `tel`).
+   ≤3 karakterli kökler (`tc`, `vkn`, `tel`, `gsm`, `cep`) yalnızca tam kelimeyle eşleşir ("telif", "cephe" bağlam sayılmasın diye); yaygın bileşik biçimler (`tcno`, `vkno`, `telno` …) ayrı önek kökü olarak listelenir; `telim`, `telden` gibi diğer ekli biçimler bağlam sayılmaz. `ulaş` yerine fiil biçimleri (`ulaşa`, `ulaşın`, `ulaşıl`) kullanılır, "ulaşım" eşleşmez. Nokta hem silinir hem boşluğa çevrilir ("T.C." → `tc`, "Tel.No" → `tel`).
 3. **Aynı türden iki değer — çözüldü.** LiteLLM etiketleri kendisi numaralıyor (`<TR_NATIONAL_ID_1>`,
    `<TR_NATIONAL_ID_2>`); e2e testi yine de doğrular.
 4. **Langfuse'a ne gidiyor — çözüldü.** E2E testi, geri açılan cevabın Langfuse'a ham PII olarak gittiğini
@@ -177,7 +177,7 @@ Plan yazılırken presidio-analyzer 2.2.366 ve LiteLLM 1.109.1 ile bir deneme (s
   `presidio-tr`, `language=tr`; (d) (c)'nin `score_threshold=0.7` ile çalıştırılmışı —
   bağlam kademesi kapalı, kesinlik tercih edenler için. Varlık türü başına P/R/F1.
 - Bağlamsız zor PII şablonları (bağlamsız VKN, öneksiz telefon) bilerek eklenir; recall şablon bağlamıyla şişmesin.
-- **Bağımsız set:** `HELDOUT_TEMPLATES`, koda erişimi olmayan ayrı bir LLM ajanına yalnızca alan listesiyle yazdırılmış 24 şablon.
+- **Bağımsız set:** `HELDOUT_TEMPLATES`, koda erişimi olmayan ayrı bir LLM ajanına yalnızca alan listesi, hangi alanın PII olduğu ve bir dağılım isteğiyle yazdırılmış 24 şablon: 12 PII'li (en az 3'ü ipucu kelimesiz, en az 2'si yazım hatalı alanla) ve 12 PII'siz (PII kelimelerine yakın numaralar dahil). Değer üreteçleri ana setle ortaktır; yalnızca cümle şablonları bağımsızdır.
   Tanıyıcılar bu sete göre ayarlanmaz; sonucu ana setten ayrı raporlanır.
 - Tür gözetmeyen "maskelenen" oranı da raporlanır: varsayılan Presidio TC kimliği yanlış türle
   (`US_BANK_NUMBER`, `DATE_TIME`…) yakalayıp yine maskeleyebilir. Bu yüzden asıl karşılaştırma
