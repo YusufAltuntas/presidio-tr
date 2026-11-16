@@ -215,8 +215,8 @@ Pre-commit: gitleaks + ruff (`uvx pre-commit install`). CI runs ruff and the uni
 ## Known limitations
 
 - A checksum-invalid national ID with no context is not masked; neither is a VKN without context.
-- Unsupported forms: spaced TCKN (`100 000 001 46`), IBAN with a space after `TR` (`TR 33 …`), 0850/0800
-  numbers.
+- Unsupported forms: spaced TCKN (`100 000 001 46`), IBAN with a space after `TR` (`TR 33 …`), hyphenated IBAN
+  (`TR33-0006-…`), dotted phone (`0532.123.45.67`), 0850/0800 and 444 numbers.
 - Non-PII numbers that pass a checksum by chance (about 1% of random 11-digit numbers, about 10% of 10-digit numbers
   next to a context word) are masked at score 1.0; a score threshold cannot separate them.
 - Context matching can leak across neighbouring labels: one label's context word can push a nearby value into the 0.6 tier.

@@ -215,8 +215,8 @@ Pre-commit: gitleaks + ruff (`uvx pre-commit install`). CI her push'ta ruff ve b
 ## Bilinen sınırlamalar
 
 - Bağlamsız ve checksum'ı bozuk TC kimlik no maskelenmez; bağlamsız VKN de maskelenmez.
-- Desteklenmeyen yazımlar: boşluklu TCKN (`100 000 001 46`), `TR` sonrası boşluklu IBAN (`TR 33 …`), 0850/0800
-  numaraları.
+- Desteklenmeyen yazımlar: boşluklu TCKN (`100 000 001 46`), `TR` sonrası boşluklu IBAN (`TR 33 …`), tireli IBAN
+  (`TR33-0006-…`), noktalı telefon (`0532.123.45.67`), 0850/0800 ve 444'lü numaralar.
 - Checksum'ı tesadüfen tutan PII olmayan sayılar (rastgele 11 hanelilerin ~%1'i, bağlamlı 10 hanelilerin ~%10'u)
   1.0 skorla maskelenir; skor eşiği bunları ayıramaz.
 - Bağlam eşleştirmesi komşu etiketlere taşabilir: bir etiketin bağlam kelimesi yanındaki başka bir değeri de
