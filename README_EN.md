@@ -86,7 +86,9 @@ drop the context tier with a score threshold:
 analyzer.analyze(text, language="tr", score_threshold=0.7)
 ```
 
-The thresholded version is the `score_threshold=0.7` row in the table.
+The thresholded version is the `score_threshold=0.7` row in the table. The HTTP server (`/analyze`) also accepts a
+`score_threshold` field. LiteLLM 1.109.1 does not send that field to the analyzer and filters results itself; in the
+gateway, set the threshold in the guardrail config: `presidio_score_thresholds: {ALL: 0.7}`.
 
 ### Held-out template set
 

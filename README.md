@@ -86,7 +86,9 @@ tercih ediyorsanız bağlam kademesini skor eşiğiyle kapatın:
 analyzer.analyze(text, language="tr", score_threshold=0.7)
 ```
 
-Eşikli sürüm tablodaki `score_threshold=0.7` satırıdır.
+Eşikli sürüm tablodaki `score_threshold=0.7` satırıdır. HTTP sunucusu (`/analyze`) da `score_threshold` alanını
+kabul eder. LiteLLM 1.109.1 ise bu alanı analyzer'a göndermez, sonuçları kendisi süzer; gateway'de eşik
+guardrail ayarında verilir: `presidio_score_thresholds: {ALL: 0.7}`.
 
 ### Bağımsız şablon seti
 
