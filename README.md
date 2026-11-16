@@ -156,6 +156,9 @@ Beklenen çıktı: `TC kimlik no 10000000146, telefon 0532 123 45 67.` (değerle
 `http://localhost:3000`; giriş bilgileri `deploy/.env` içindeki `LANGFUSE_INIT_USER_*` alanları. Portlar yalnızca
 `127.0.0.1`'e bağlıdır. Durdurmak için: `docker compose -f deploy/docker-compose.yml down`.
 
+İsim maskelemeyi açmak için `PRESIDIO_TR_NER=1 docker compose -f deploy/docker-compose.yml up -d --build --wait`.
+Analyzer imajı torch (CPU) ve gömülü modelle ~0,7 GB'tan ~2,6 GB'a çıkar.
+
 Analyzer erişilemezse istek reddedilir (fail-closed; e2e testle doğrulandı). Guardrail ayarında neyin neden şart
 olduğu (`presidio_filter_scope: input`, ikinci `logging_only` guardrail'i) [`docs/design.md`](docs/design.md)
 "Riskler" bölümünde.

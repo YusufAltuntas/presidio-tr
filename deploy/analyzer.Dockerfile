@@ -6,7 +6,13 @@ WORKDIR /app
 COPY pyproject.toml uv.lock README.md README_EN.md LICENSE ./
 COPY src ./src
 # Sürümler uv.lock'tan gelir; imaj her kurulumda aynı bağımlılıklarla çıkar.
-RUN uv sync --locked --no-dev --no-editable --extra server
+# NER=1 isim tanımayı ekler: CPU torch + transformers ve Türkçe NER modeli (~440 MB) imaja gömülür.
+ARG NER=0
+ENV HF_HOME=/app/hf-cache
+RUN if [ "$NER" = "1" ]; then EXTRAS="--extra server --extra ner"; else EXTRAS="--extra server"; fi \
+ && uv sync --locked --no-dev --no-editable $EXTRAS \
+ && if [ "$NER" = "1" ]; then /app/.venv/bin/python -c "from presidio_tr.ner import TurkishPersonRecognizer; TurkishPersonRecognizer()"; fi
+ENV PRESIDIO_TR_NER=$NER HF_HUB_OFFLINE=$NER
 
 # Servis root yetkisi gerektirmez.
 RUN useradd --system --no-create-home app

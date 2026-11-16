@@ -159,6 +159,9 @@ Expected output: `TC kimlik no 10000000146, telefon 0532 123 45 67.` (values res
 `http://localhost:3000`; the login is in the `LANGFUSE_INIT_USER_*` fields of `deploy/.env`. Ports are bound to
 `127.0.0.1` only. To stop: `docker compose -f deploy/docker-compose.yml down`.
 
+To turn on name masking: `PRESIDIO_TR_NER=1 docker compose -f deploy/docker-compose.yml up -d --build --wait`.
+With torch (CPU) and the bundled model, the analyzer image grows from ~0.7 GB to ~2.6 GB.
+
 If the analyzer is unreachable the request is rejected (fail-closed; verified by an e2e test). Which guardrail
 settings are required and why (`presidio_filter_scope: input`, a second `logging_only` guardrail) is in the "Riskler"
 section of [`docs/design.md`](docs/design.md).
