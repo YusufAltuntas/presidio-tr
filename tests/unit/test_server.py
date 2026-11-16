@@ -23,6 +23,12 @@ def test_analyze_filters_by_requested_entities():
     assert [item["entity_type"] for item in response.json()] == ["PHONE_NUMBER"]
 
 
+def test_analyze_applies_score_threshold():
+    payload = {"text": "Cep: 5321234567", "language": "tr"}
+    assert [item["score"] for item in client.post("/analyze", json=payload).json()] == [0.6]
+    assert client.post("/analyze", json={**payload, "score_threshold": 0.7}).json() == []
+
+
 def test_analyze_rejects_unsupported_language():
     response = client.post("/analyze", json={"text": "x", "language": "en"})
     assert response.status_code == 400
