@@ -21,7 +21,9 @@ Paket Microsoft'un resmi projesi değildir; README'nin tepesinde bu açıkça ya
 ## Kapsam
 
 **v1'de:**
-- Tanıyıcılar: TC kimlik no, VKN, TR IBAN, TR telefon.
+- Tanıyıcılar: TC kimlik no, VKN, TR IBAN, TR telefon. `build_analyzer()` Presidio'nun hazır e-posta ve kredi kartı
+  tanıyıcılarını da `tr` için ekler (`tr` registry'sine kendiliğinden gelmezler); hazır telefon ve tarih tanıyıcıları
+  Türkçe metinde sipariş/referans numaralarını yanlış maskelediği için eklenmez.
 - Benchmark: varsayılan Presidio, hazır tanıyıcılı `tr` Presidio ve Presidio + `presidio-tr` karşılaştırması.
 - Demo: `docker compose` ile LiteLLM + Presidio (paketli imaj) + Langfuse.
 - Anahtar başı bütçe ve end-user attribution — yalnızca LiteLLM config'i, kod yok.

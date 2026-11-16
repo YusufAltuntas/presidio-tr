@@ -31,8 +31,9 @@ analyzer.analyze("TC kimlik no 10000000146", language="tr")
 ```
 
 Model indirmek gerekmez (boş spaCy `tr` pipeline'ı). Varlık adları upstream ile aynıdır (`TR_NATIONAL_ID`,
-`TR_TAX_ID`, `IBAN_CODE`, `PHONE_NUMBER`). `add_turkish_recognizers(registry)` yalnızca `tr` için kurulmuş bir
-registry ile çalışır; doğru kurulum için `build_analyzer()` kaynağına bakın (`src/presidio_tr/__init__.py`).
+`TR_TAX_ID`, `IBAN_CODE`, `PHONE_NUMBER`). `build_analyzer()` Presidio'nun hazır e-posta (`EMAIL_ADDRESS`) ve kredi
+kartı (`CREDIT_CARD`) tanıyıcılarını da ekler. `add_turkish_recognizers(registry)` yalnızca dört Türkçe tanıyıcıyı
+ekler ve yalnızca `tr` için kurulmuş bir registry ile çalışır; doğru kurulum için `build_analyzer()` kaynağına bakın (`src/presidio_tr/__init__.py`).
 
 ## Nasıl çalışır
 
@@ -138,7 +139,7 @@ olduğu (`presidio_filter_scope: input`, ikinci `logging_only` guardrail'i) [`do
 ## Testler
 
 ```bash
-uv run pytest                                                 # birim testler (116)
+uv run pytest                                                 # birim testler (118)
 set -a && . deploy/.env && set +a && uv run pytest -m e2e     # uçtan uca (7)
 ```
 

@@ -39,3 +39,17 @@ def test_build_analyzer_masks_valid_vkn_with_compound_context_word():
     text = "VKNo: 1234567890"
     results = build_analyzer().analyze(text, language="tr")
     assert [(r.entity_type, text[r.start : r.end], r.score) for r in results] == [("TR_TAX_ID", "1234567890", 1.0)]
+
+
+def test_build_analyzer_masks_email_and_credit_card():
+    text = "E-posta ayse.yilmaz@example.com, kart 4111 1111 1111 1111."
+    results = build_analyzer().analyze(text, language="tr")
+    found = {(r.entity_type, text[r.start : r.end], r.score) for r in results}
+    assert found == {
+        ("EMAIL_ADDRESS", "ayse.yilmaz@example.com", 1.0),
+        ("CREDIT_CARD", "4111 1111 1111 1111", 1.0),
+    }
+
+
+def test_build_analyzer_ignores_card_shaped_number_failing_luhn():
+    assert build_analyzer().analyze("Kart 4111 1111 1111 1112", language="tr") == []

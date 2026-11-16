@@ -3,6 +3,7 @@
 import spacy
 from presidio_analyzer import AnalyzerEngine, RecognizerRegistry
 from presidio_analyzer.nlp_engine import SpacyNlpEngine
+from presidio_analyzer.predefined_recognizers import CreditCardRecognizer, EmailRecognizer
 
 from presidio_tr.recognizers import all_recognizers
 
@@ -31,8 +32,15 @@ def add_turkish_recognizers(registry: RecognizerRegistry) -> RecognizerRegistry:
 
 
 def build_analyzer() -> AnalyzerEngine:
-    """Türkçe tanıyıcılarla `language="tr"` için hazır bir AnalyzerEngine kurar."""
+    """Türkçe tanıyıcılarla `language="tr"` için hazır bir AnalyzerEngine kurar.
+
+    Presidio'nun dilden bağımsız e-posta ve kredi kartı tanıyıcıları da eklenir; bunlar `tr` registry'sine
+    kendiliğinden gelmez. Hazır telefon ve tarih tanıyıcıları bilerek eklenmez: Türkçe metinde sipariş/referans
+    numaralarını yanlış maskeliyorlar.
+    """
     nlp_engine = BlankTurkishNlpEngine()
     nlp_engine.load()
     registry = add_turkish_recognizers(RecognizerRegistry(supported_languages=[LANGUAGE]))
+    registry.add_recognizer(EmailRecognizer(supported_language=LANGUAGE))
+    registry.add_recognizer(CreditCardRecognizer(supported_language=LANGUAGE))
     return AnalyzerEngine(registry=registry, nlp_engine=nlp_engine, supported_languages=[LANGUAGE])

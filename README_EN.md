@@ -31,8 +31,9 @@ analyzer.analyze("TC kimlik no 10000000146", language="tr")
 ```
 
 No model download is needed (blank spaCy `tr` pipeline). Entity names match upstream (`TR_NATIONAL_ID`,
-`TR_TAX_ID`, `IBAN_CODE`, `PHONE_NUMBER`). `add_turkish_recognizers(registry)` only works with a registry set up
-for `tr`; see the `build_analyzer()` source (`src/presidio_tr/__init__.py`) for the correct setup.
+`TR_TAX_ID`, `IBAN_CODE`, `PHONE_NUMBER`). `build_analyzer()` also adds Presidio's built-in email (`EMAIL_ADDRESS`)
+and credit card (`CREDIT_CARD`) recognizers. `add_turkish_recognizers(registry)` adds only the four Turkish
+recognizers and only works with a registry set up for `tr`; see the `build_analyzer()` source (`src/presidio_tr/__init__.py`) for the correct setup.
 
 ## How it works
 
@@ -140,7 +141,7 @@ section of [`docs/design.md`](docs/design.md).
 ## Tests
 
 ```bash
-uv run pytest                                                 # unit tests (116)
+uv run pytest                                                 # unit tests (118)
 set -a && . deploy/.env && set +a && uv run pytest -m e2e     # end-to-end (7)
 ```
 
