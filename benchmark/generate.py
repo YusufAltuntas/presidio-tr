@@ -28,7 +28,7 @@ FIELDS = {
     "iban_typo": (lambda r, f: synth.typo(synth.tr_iban(r, spaced=False), r, tr_iban_valid), "IBAN_CODE"),
     "phone": (lambda r, f: synth.phone(r), "PHONE_NUMBER"),
     "bare_phone": (lambda r, f: synth.bare_phone(r), "PHONE_NUMBER"),
-    "name": (lambda r, f: f.name(), None),
+    "name": (lambda r, f: f.name(), "PERSON"),
     "city": (lambda r, f: f.city(), None),
     "order_no": (lambda r, f: synth.order_no(r), NEGATIVE),
     "amount": (lambda r, f: f"{r.randint(10, 99999):,}".replace(",", ".") + f",{r.randint(0, 99):02d} TL", None),

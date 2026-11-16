@@ -1,6 +1,7 @@
 """Varsayılan Presidio (en), Türkçe kurulmuş Presidio ve Presidio + presidio-tr'yi (eşiksiz ve eşikli) aynı veri üzerinde karşılaştırır.
 
 Kullanım: python -m benchmark.run --data benchmark/data/tr_pii.jsonl --out-dir benchmark/results
+`--ner` isim tanımalı sistemi de ekler; `presidio-tr[ner]` ekini ister.
 """
 
 import argparse
@@ -16,7 +17,7 @@ from presidio_analyzer.predefined_recognizers import PhoneRecognizer, TrNational
 
 from presidio_tr import BlankTurkishNlpEngine, build_analyzer
 
-ENTITIES = ("TR_NATIONAL_ID", "TR_TAX_ID", "IBAN_CODE", "PHONE_NUMBER")
+ENTITIES = ("TR_NATIONAL_ID", "TR_TAX_ID", "IBAN_CODE", "PHONE_NUMBER", "PERSON")
 
 Span = tuple[int, int, str]
 
@@ -108,9 +109,9 @@ def vanilla_turkish_predictor() -> Callable[[str], list[Span]]:
     return lambda text: [(r.start, r.end, r.entity_type) for r in analyzer.analyze(text, language="tr")]
 
 
-def turkish_predictor(score_threshold: float | None = None) -> Callable[[str], list[Span]]:
-    """Presidio + presidio-tr. `score_threshold=0.7` bağlam kademesini (0.6) kapatır."""
-    analyzer = build_analyzer()
+def turkish_predictor(score_threshold: float | None = None, ner: bool = False) -> Callable[[str], list[Span]]:
+    """Presidio + presidio-tr. `score_threshold=0.7` bağlam kademesini (0.6) kapatır; `ner=True` isim tanımayı açar."""
+    analyzer = build_analyzer(ner=ner)
     return lambda text: [
         (r.start, r.end, r.entity_type) for r in analyzer.analyze(text, language="tr", score_threshold=score_threshold)
     ]
@@ -148,6 +149,7 @@ def main() -> None:
     parser.add_argument("--data", type=Path, default=Path("benchmark/data/tr_pii.jsonl"))
     parser.add_argument("--out-dir", type=Path, default=Path("benchmark/results"))
     parser.add_argument("--tag", default="", help="Sonuç dosyası adına eklenir, ör. heldout")
+    parser.add_argument("--ner", action="store_true", help="İsim tanımalı sistemi de ekler (presidio-tr[ner])")
     args = parser.parse_args()
     rows = [json.loads(line) for line in args.data.read_text(encoding="utf-8").splitlines()]
     results = {
@@ -156,6 +158,8 @@ def main() -> None:
         "Presidio + presidio-tr": score(rows, turkish_predictor()),
         "Presidio + presidio-tr (score_threshold=0.7)": score(rows, turkish_predictor(score_threshold=0.7)),
     }
+    if args.ner:
+        results["Presidio + presidio-tr + NER"] = score(rows, turkish_predictor(ner=True))
     report = to_markdown(results, len(rows), args.data)
     args.out_dir.mkdir(parents=True, exist_ok=True)
     out = report_path(args.out_dir, args.tag)

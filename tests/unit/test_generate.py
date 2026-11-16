@@ -50,3 +50,10 @@ def test_heldout_templates_are_disjoint_from_main_templates():
 def test_generate_uses_given_template_set():
     rows = generate(30, seed=3, templates=["Sadece {order_no}."])
     assert all(row["text"].startswith("Sadece ") for row in rows)
+
+
+def test_render_labels_name_as_person():
+    row = render("Sayın {name}", random.Random(0), Faker("tr_TR"))
+    (span,) = row["spans"]
+    assert span["entity"] == "PERSON"
+    assert row["text"][span["start"] : span["end"]] == row["text"][len("Sayın ") :]
