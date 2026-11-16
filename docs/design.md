@@ -152,6 +152,8 @@ Plan yazılırken presidio-analyzer 2.2.366 ve LiteLLM 1.109.1 ile bir deneme (s
    - Filter scope mekanizması: `both` ile LiteLLM ek bir `mask_output_callback` (`apply_to_output=True`) yaratır;
      bunun `_presidio_output_mode("logging_only")` sonucu `post_call`'a çözülür ve canlı cevabı maskeler.
      `input` ile bu callback yaratılmaz; logging_only callback'inin `async_logging_hook`'u yine de log kopyasını maskeler.
+   - Bu iki davranış LiteLLM'e hata olarak bildirildi (BerriAI/litellm#52045, #52046) ve düzeltme PR'ları açıldı
+     (BerriAI/litellm#52112, #52113). Birleşip yayınlanana kadar demo `presidio_filter_scope: input` ile kalır.
    - Fail-open (log): LiteLLM'in logging hook'u bloklamaz; çağrıdan sonra, loglamadan önce Presidio hata verirse
      loglanan kopya maskesiz kalabilir. "Langfuse yalnızca maskeli metin görür" analyzer/anonymizer sağlıklıyken geçerlidir.
 5. **Fail-closed — kısmen çözüldü.** LiteLLM 1.109.1, `output_parse_pii` açıkken analyzer'dan geçersiz cevap
