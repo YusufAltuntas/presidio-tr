@@ -1,6 +1,15 @@
 import pytest
 
-from presidio_tr.context import IBAN_STEMS, PHONE_STEMS, TCKN_STEMS, VKN_STEMS, has_context, tr_lower
+from presidio_tr.context import (
+    IBAN_STEMS,
+    PHONE_STEMS,
+    TCKN_STEMS,
+    VKN_STEMS,
+    WINDOW_AFTER,
+    WINDOW_BEFORE,
+    has_context,
+    tr_lower,
+)
 
 
 def test_tr_lower_follows_turkish_casing():
@@ -50,6 +59,22 @@ def test_has_context_ignores_words_outside_window():
     text = "kimlik " + "a" * 60 + " X"
     start = text.index("X")
     assert not has_context(text, start, start + 1, TCKN_STEMS)
+
+
+def test_has_context_does_not_cut_words_at_window_edges():
+    # Pencere sınırı "Otel"in ortasına düşse de "tel" bağlam sayılmaz.
+    before = "Otel " + "b" * (WINDOW_BEFORE - 5) + " X"
+    start = before.index("X")
+    assert not has_context(before, start, start + 1, PHONE_STEMS)
+    # Sağ sınır "telif"i kesse de "tel" bağlam sayılmaz.
+    after = "X " + "b" * (WINDOW_AFTER - 5) + " telif"
+    assert not has_context(after, 0, 1, PHONE_STEMS)
+
+
+def test_has_context_completes_words_that_cross_window_edge():
+    text = "Telefon " + "b" * (WINDOW_BEFORE - 5) + " X"
+    start = text.index("X")
+    assert has_context(text, start, start + 1, PHONE_STEMS)
 
 
 def test_has_context_handles_uppercase_acronyms_and_turkish_capitals():

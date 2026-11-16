@@ -29,6 +29,7 @@ WINDOW_AFTER = 30
 SHORT_STEM_MAX = 3
 
 _WORD = re.compile(r"\w+")
+_WORD_CHAR = re.compile(r"\w")
 
 
 def tr_lower(text: str) -> str:
@@ -47,7 +48,13 @@ def has_context(text: str, start: int, end: int, stems: tuple[str, ...]) -> bool
     Kök eşleştirmesi Türkçe ekleri tolere eder: "IBAN'ımı" → "iban", "hesabıma" → "hesab".
     Kısa kökler (`tc`, `tel`, `cep`…) yalnızca tam kelimeyle eşleşir.
     """
-    window = text[max(0, start - WINDOW_BEFORE) : start] + " " + text[end : end + WINDOW_AFTER]
+    left, right = max(0, start - WINDOW_BEFORE), min(len(text), end + WINDOW_AFTER)
+    # Pencere kelimenin ortasına denk gelirse kelimeyi tamamla; yarım kelime sahte kök üretmesin ("Otel" → "tel").
+    while left > 0 and _WORD_CHAR.match(text[left - 1]):
+        left -= 1
+    while right < len(text) and _WORD_CHAR.match(text[right]):
+        right += 1
+    window = text[left:start] + " " + text[end:right]
     # Nokta hem silinir ("T.C." → "tc") hem boşluğa çevrilir ("Tel.No" → "tel no"); ikisinin kelimeleri birleştirilir.
     words: set[str] = set()
     for variant in (window.replace(".", ""), window.replace(".", " ")):
