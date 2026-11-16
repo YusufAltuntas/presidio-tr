@@ -1,11 +1,18 @@
 FROM python:3.11-slim
 
+COPY --from=ghcr.io/astral-sh/uv:0.9.3 /uv /bin/uv
+
 WORKDIR /app
-COPY pyproject.toml README.md README_EN.md LICENSE ./
+COPY pyproject.toml uv.lock README.md README_EN.md LICENSE ./
 COPY src ./src
-RUN pip install --no-cache-dir ".[server]"
+# Sürümler uv.lock'tan gelir; imaj her kurulumda aynı bağımlılıklarla çıkar.
+RUN uv sync --locked --no-dev --no-editable --extra server
+
+# Servis root yetkisi gerektirmez.
+RUN useradd --system --no-create-home app
+USER app
 
 EXPOSE 3000
 HEALTHCHECK --interval=10s --timeout=3s --retries=5 \
   CMD python -c "import urllib.request; urllib.request.urlopen('http://127.0.0.1:3000/health')"
-CMD ["uvicorn", "presidio_tr.server:app", "--host", "0.0.0.0", "--port", "3000"]
+CMD ["/app/.venv/bin/uvicorn", "presidio_tr.server:app", "--host", "0.0.0.0", "--port", "3000"]
