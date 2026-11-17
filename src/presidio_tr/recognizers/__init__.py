@@ -6,7 +6,8 @@ from presidio_tr.context import IBAN_STEMS, PHONE_STEMS, TCKN_STEMS, VKN_STEMS
 from presidio_tr.recognizers.base import TurkishPatternRecognizer
 from presidio_tr.validators import tckn_valid, tr_iban_valid, tr_phone_valid, vkn_valid
 
-TCKN_REGEX = r"(?<!\d)[1-9]\d{10}(?!\d)"
+# Rakamlar arasında tek boşluk ya da tire olabilir ("100-000-001-46"); başka bir rakam grubunun ortasından başlamaz.
+TCKN_REGEX = r"(?<!\d)(?<!\d[ -])[1-9](?:[ -]?\d){10}(?![ -]?\d)"
 VKN_REGEX = r"(?<!\d)\d{10}(?!\d)"
 IBAN_REGEX = r"(?<![A-Za-z0-9])TR\d{2}(?:\s?\d{4}){5}\s?\d{2}(?!\d)"
 PHONE_REGEX = r"(?<![\d+])(?:(?:\+|00)?90[\s-]?|0[\s-]?)?\(?[2-5]\d{2}\)?[\s-]?\d{3}[\s-]?\d{2}[\s-]?\d{2}(?!\d)"

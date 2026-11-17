@@ -4,7 +4,7 @@ import re
 
 TCKN_STEMS = ("tc", "tckn", "kimlik", "kimliğ", "vatandaşlık", "vatandaşlığ", "nüfus", "tcno", "tckimlik")
 VKN_STEMS = ("vkn", "vergi", "vkno")
-IBAN_STEMS = ("iban", "hesap", "hesab")
+IBAN_STEMS = ("iban", "ıban", "hesap", "hesab")  # "ıban": Türkçe klavyeyle küçük harf yazımı
 PHONE_STEMS = (
     "tel",
     "telefon",

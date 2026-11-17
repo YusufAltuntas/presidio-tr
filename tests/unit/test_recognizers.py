@@ -56,3 +56,17 @@ def test_tckn_regex_does_not_match_inside_longer_numbers():
 
 def test_recognizers_are_registered_for_turkish():
     assert TcKimlikRecognizer().supported_language == "tr"
+
+
+@pytest.mark.parametrize("value", ["100-000-001-46", "100 000 001 46", "1000 0000 146"])
+def test_tckn_written_with_hyphens_or_spaces_is_masked(value):
+    assert _run(TcKimlikRecognizer(), f"TC kimlik no {value}, teşekkürler") == [(value, VALID_SCORE)]
+
+
+def test_tckn_does_not_match_digit_groups_inside_a_spaced_iban():
+    assert _run(TcKimlikRecognizer(), "IBAN TR33 0006 1005 1978 6457 8413 26") == []
+
+
+def test_iban_typed_with_dotless_i_counts_as_context():
+    text = "ıban paylaşıyorum TR330006100519786457841327"
+    assert _run(TrIbanRecognizer(), text) == [("TR330006100519786457841327", CONTEXT_SCORE)]

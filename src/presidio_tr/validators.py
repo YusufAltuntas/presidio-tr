@@ -4,10 +4,12 @@ import re
 
 _NON_DIGIT = re.compile(r"\D")
 _WHITESPACE = re.compile(r"\s")
+_TCKN_SEPARATOR = re.compile(r"[ -]")
 
 
 def tckn_valid(candidate: str) -> bool:
-    """TC kimlik numarasının resmi checksum kuralına uyup uymadığını döndürür."""
+    """TC kimlik numarasının resmi checksum kuralına uyup uymadığını döndürür; boşluk ve tire yok sayılır."""
+    candidate = _TCKN_SEPARATOR.sub("", candidate)
     if len(candidate) != 11 or not candidate.isdigit() or candidate[0] == "0":
         return False
     d = [int(c) for c in candidate]
