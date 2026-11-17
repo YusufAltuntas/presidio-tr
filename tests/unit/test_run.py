@@ -53,3 +53,9 @@ def test_report_path_appends_tag_to_date():
     today = datetime.date.today().isoformat()
     assert report_path(Path("r")) == Path("r") / f"{today}.md"
     assert report_path(Path("r"), "heldout") == Path("r") / f"{today}-heldout.md"
+
+
+def test_score_ignores_predictions_on_unmeasured_spans():
+    rows = [{"text": "Adres 1234567890", "spans": [], "negatives": [], "ignore": [{"start": 6, "end": 16}]}]
+    counts, _ = score(rows, lambda text: [(6, 16, "TR_TAX_ID")])
+    assert counts["TR_TAX_ID"].fp == 0

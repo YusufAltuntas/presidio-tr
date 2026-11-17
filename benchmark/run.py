@@ -17,7 +17,7 @@ from presidio_analyzer.predefined_recognizers import PhoneRecognizer, TrNational
 
 from presidio_tr import BlankTurkishNlpEngine, build_analyzer
 
-ENTITIES = ("TR_NATIONAL_ID", "TR_TAX_ID", "IBAN_CODE", "PHONE_NUMBER", "PERSON")
+ENTITIES = ("TR_NATIONAL_ID", "TR_TAX_ID", "IBAN_CODE", "PHONE_NUMBER", "PERSON", "EMAIL_ADDRESS", "CREDIT_CARD")
 
 Span = tuple[int, int, str]
 
@@ -56,11 +56,13 @@ def score(rows: list[dict], predict: Callable[[str], list[Span]]) -> tuple[dict[
 
     Bir altın aralık, aynı türden ve onunla çakışan bir tahmin varsa TP sayılır.
     Yanlış maskeleme: PII olmayan sayıların (sipariş no, referans no) bir tahminle örtülme oranı.
+    Satırdaki `ignore` aralıkları (ölçülmeyen türler, ör. adres) ile çakışan tahminler FP sayılmaz.
     """
     counts = {entity: Counts() for entity in ENTITIES}
     negatives_total = negatives_masked = 0
     for row in rows:
         gold = [(s["start"], s["end"], s["entity"]) for s in row["spans"]]
+        ignore = [(s["start"], s["end"], "") for s in row.get("ignore", [])]
         preds = predict(row["text"])
         for g in gold:
             c = counts[g[2]]
@@ -72,7 +74,8 @@ def score(rows: list[dict], predict: Callable[[str], list[Span]]) -> tuple[dict[
                 c.masked += 1
         for p in preds:
             if p[2] in counts and not any(g[2] == p[2] and overlaps(p, g) for g in gold):
-                counts[p[2]].fp += 1
+                if not any(overlaps(p, i) for i in ignore):
+                    counts[p[2]].fp += 1
         for n in row["negatives"]:
             negatives_total += 1
             if any(overlaps(p, (n["start"], n["end"], "")) for p in preds):
@@ -135,6 +138,8 @@ def to_markdown(results: dict[str, tuple[dict[str, Counts], float]], n_rows: int
     ]
     for system, (counts, _) in results.items():
         for entity, c in counts.items():
+            if c.tp + c.fn == 0:  # veride bu türden altın aralık yok
+                continue
             lines.append(
                 f"| {system} | {entity} | {c.precision:.2f} | {c.recall:.2f} | {c.f1:.2f} | {c.masked_rate:.2f} |"
             )
