@@ -13,8 +13,7 @@ restored in the answer. This is not an official Microsoft project; it is a commu
 - TR phone F1: 0.72 → 0.89. IBAN F1: 0.93 → 1.00.
 - A TCKN/VKN/IBAN with one mistyped digit is still masked when a context word is nearby. The cost: more non-PII
   numbers get masked (see Trade-off below).
-- Names (optional, Turkish NER model): F1 0.98 on synthetic data. Synthetic names are easy; not yet measured on
-  hand-written hard sentences.
+- Names (optional, Turkish NER model): F1 0.93 on a third-party set of banking messages (123 of 124 names).
 - Gateway demo: the LLM provider only sees masked text; so does Langfuse while the analyzer and anonymizer are healthy.
 
 ## Install and usage
@@ -96,11 +95,9 @@ Fair baseline: `language="tr"`, Presidio's built-in recognizers, `TrNationalIdRe
 the results files: [`benchmark/results/2026-11-16.md`](benchmark/results/2026-11-16.md),
 [`2026-11-16-heldout.md`](benchmark/results/2026-11-16-heldout.md). "—": name recognition off.
 
-The name results are optimistic: in the templates, names are capitalized full names in obvious places ("Sayın …",
-"… adına"), and there are no ordinary words that look like names ("Barış görüşmeleri", peace talks). A separate
-hand-written set has a place for that ([`benchmark/handwritten.txt`](benchmark/handwritten.txt), still empty).
-Model scores sometimes fall below 0.7 ("Yılmaz" in "Ayşe Yılmaz" scores 0.58); with `score_threshold=0.7` such names are
-not masked.
+Names in the templates are easy (capitalized full names in obvious places); see the third-party sets below for a
+realistic name result. Model scores sometimes fall below 0.7 ("Yılmaz" in "Ayşe Yılmaz" scores 0.58); with
+`score_threshold=0.7` such names are not masked.
 
 The data is entirely synthetic (Faker `tr_TR` + templates, seed 42). It deliberately includes non-PII numbers next
 to context words ("Kimlik doğrulama kodunuz ..." / "Your ID verification code ...") and context-free hard PII cases.
@@ -109,10 +106,39 @@ To reproduce:
 ```bash
 uv sync --group benchmark && uv run python -m benchmark.generate --n 1000 --seed 42 && uv run python -m benchmark.run
 uv run python -m benchmark.generate --templates heldout --out benchmark/data/tr_pii_heldout.jsonl && uv run python -m benchmark.run --data benchmark/data/tr_pii_heldout.jsonl --tag heldout
-uv run python -m benchmark.handwritten && uv run python -m benchmark.run --data benchmark/data/tr_pii_handwritten.jsonl --tag handwritten
 ```
 
 For the name row, install with `uv sync --group benchmark --extra ner` and add `--ner` to `benchmark.run`.
+
+### Third-party sets
+
+Three Turkish PII sets published by others are downloaded at a pinned revision (`uv run python -m benchmark.external`).
+All are synthetic but independent of our templates; the recognizers were not tuned on them. F1:
+
+| Set | System | TCKN | VKN | IBAN | Phone | Name | Email | Card |
+|---|---|---|---|---|---|---|---|---|
+| Banking messages ([cagrigungor](https://huggingface.co/datasets/cagrigungor/turkish-pii-masking-benchmark), 550) | Presidio set up for Turkish | 0.62 | 0.00 | 0.00 | 0.92 | 0.00 | 1.00 | 0.00 |
+| | presidio-tr, `ner=True` | 0.62 | 0.67 | 0.31 | 0.92 | 0.93 | 1.00 | 0.10 |
+| [BTX24](https://huggingface.co/datasets/BTX24/turkish-privacy-pii-ner) test (10,393) | Presidio set up for Turkish | 0.12 | 0.00 | 0.02 | 0.93 | 0.00 | 0.84 | — |
+| | presidio-tr, `ner=True` | 0.70 | 0.72 | 0.86 | 0.96 | 0.84 | 0.84 | — |
+| [fevziegeyurtsevenler](https://huggingface.co/datasets/fevziegeyurtsevenler/turkish-pii-corpus) (155) | Presidio set up for Turkish | 1.00 | 0.00 | 1.00 | 0.95 | — | 1.00 | 0.00 |
+| | presidio-tr, `ner=True` | 1.00 | 1.00 | 1.00 | 1.00 | — | 1.00 | 0.93 |
+
+Reading notes:
+
+- Most numbers in the banking and BTX24 sets fail their checksum (none of the banking IBANs and cards, 6% of the
+  BTX24 TCKNs). presidio-tr only catches those with a context word nearby, which explains most of the low recall.
+- The banking set also has misses from numbers written as words ("tc dokuz dokuz yedi …"), hyphenated or spaced
+  TCKNs (`645-175-336-66`) and the context word typed as "ıban" ("ıban paylaşıyorum TR81 …").
+- Most name false positives are name parts inside email addresses (`halil.ozdemir@…`); the email is masked anyway, so
+  masking is not affected. In a 2,500-sentence BTX24 sample, all 98 name false positives are of this kind.
+- The emails missed in BTX24 use non-existent domains such as `.invalid`, which Presidio's email recognizer rejects.
+- Partially masked values (`753347****`) and unmeasured types (address, plate, health…) are left out. Details:
+  [`docs/design.md`](docs/design.md). BTX24 is CC BY 4.0, the banking set CC0, fevziegeyurtsevenler Apache 2.0.
+
+Results files: [`2026-11-17-cagrigungor.md`](benchmark/results/2026-11-17-cagrigungor.md),
+[`2026-11-17-btx24.md`](benchmark/results/2026-11-17-btx24.md),
+[`2026-11-17-fevziegeyurtsevenler.md`](benchmark/results/2026-11-17-fevziegeyurtsevenler.md).
 
 ### Trade-off
 
@@ -181,7 +207,8 @@ pre-commit runs gitleaks + ruff (`uvx pre-commit install`).
 - Addresses are not recognized. Name recognition is optional; ordinary words that look like names ("Barış",
   "Umut") can be masked, and names can be missed ("Gül" in "Umut Barış Gül").
 - A checksum-invalid TCKN with no context is not masked; neither is a VKN without context.
-- Unsupported forms: spaced TCKN (`100 000 001 46`), IBAN with a space or hyphens after `TR` (`TR 33 …`,
+- Unsupported forms: numbers written as words ("dokuz dokuz yedi …"), the context word typed as "ıban", spaced or
+  hyphenated TCKN (`100 000 001 46`, `645-175-336-66`), IBAN with a space or hyphens after `TR` (`TR 33 …`,
   `TR33-0006-…`), dotted phone (`0532.123.45.67`), 0850/0800 and 444 numbers.
 - One value's context word can push a neighbouring value into the 0.6 tier.
 - The guarantee for the log copy sent to Langfuse is fail-open: LiteLLM's logging hook is non-blocking, so if

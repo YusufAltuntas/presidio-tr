@@ -197,6 +197,13 @@ Plan yazılırken presidio-analyzer 2.2.366 ve LiteLLM 1.109.1 ile bir deneme (s
   bağlam kademesi kapalı, kesinlik tercih edenler için. Varlık türü başına P/R/F1.
 - Bağlamsız zor PII şablonları (bağlamsız VKN, öneksiz telefon) bilerek eklenir; recall şablon bağlamıyla şişmesin.
 - Şablonlardaki `{name}` alanı `PERSON` olarak etiketlenir; isim tanımalı sistem `--ner` ile eklenir.
+- **Üçüncü taraf setler:** `benchmark/external.py` üç Hugging Face setini sabit commit ile indirir ve çevirir:
+  cagrigungor/turkish-pii-masking-benchmark (bankacılık mesajları; yalnızca `tam` ve `negatif` kategorileri, çünkü
+  diğerleri yalnızca istenen etiketlerin maskelenmesini ister; aralıklar maskeli çıktıyla hizalanarak çıkarılır),
+  BTX24/turkish-privacy-pii-ner (test bölümü) ve fevziegeyurtsevenler/turkish-pii-corpus. Ölçmediğimiz türler
+  (adres, plaka, sağlık…) ve `*` içeren, zaten maskelenmiş değerler `ignore` aralığı olur: üzerlerine düşen tahmin
+  ne TP ne FP sayılır. 10+ haneli etiketsiz sayılar yanlış maskeleme negatifi sayılır. Tanıyıcılar bu setlere göre
+  ayarlanmadı; ilk sonuçlar körlemesine alındı (2026-11-17).
 - **Elle yazılmış set:** `benchmark/handwritten.txt`, `[değer](VARLIK)` işaretli cümleler; isme benzeyen sıradan
   kelimeler gibi şablonlarda olmayan zor durumlar için. Tanıyıcıları görmeden yazılır.
 - **Bağımsız set:** `HELDOUT_TEMPLATES`, koda erişimi olmayan ayrı bir LLM ajanına yalnızca alan listesi, hangi alanın PII olduğu ve bir dağılım isteğiyle yazdırılmış 24 şablon: 12 PII'li (en az 3'ü ipucu kelimesiz, en az 2'si yazım hatalı alanla) ve 12 PII'siz (PII kelimelerine yakın numaralar dahil). Değer üreteçleri ana setle ortaktır; yalnızca cümle şablonları bağımsızdır.

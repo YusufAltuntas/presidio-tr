@@ -13,8 +13,7 @@ cevapta geri açılır. Microsoft'un resmi projesi değildir; topluluk paketidir
 - TR telefon F1: 0.72 → 0.89. IBAN F1: 0.93 → 1.00.
 - Bir hanesi yanlış yazılmış TCKN/VKN/IBAN, yanında bağlam kelimesi varsa yine maskelenir. Bedeli:
   PII olmayan sayıların daha çoğu maskelenir (aşağıdaki Ödünleşim).
-- İsim (isteğe bağlı, Türkçe NER modeli): sentetik veride F1 0.98. Sentetik isimler kolay; elle yazılmış zor
-  cümlelerle henüz ölçülmedi.
+- İsim (isteğe bağlı, Türkçe NER modeli): üçüncü taraf bir bankacılık mesajı setinde F1 0.93 (124 isimden 123'ü).
 - Gateway demosu: LLM sağlayıcısı yalnızca maskeli metni görür; Langfuse da analyzer ve anonymizer sağlıklıyken.
 
 ## Kurulum ve kullanım
@@ -95,10 +94,9 @@ Adil taban çizgisi: `language="tr"`, Presidio'nun hazır tanıyıcıları, elle
 sonuç dosyalarında: [`benchmark/results/2026-11-16.md`](benchmark/results/2026-11-16.md),
 [`2026-11-16-heldout.md`](benchmark/results/2026-11-16-heldout.md). "—": isim tanıma kapalı.
 
-İsim sonuçları iyimserdir: şablonlarda isimler büyük harfle, tam ad olarak ve "Sayın", "adına" gibi belirgin yerlerde
-geçer; "Barış görüşmeleri" gibi isme benzeyen sıradan kelimeler yoktur. Bu yüzden elle yazılmış ayrı bir set
-için yer açıldı ([`benchmark/handwritten.txt`](benchmark/handwritten.txt), henüz boş). Model skorları bazen 0.7'nin
-altında kalır ("Ayşe Yılmaz"da "Yılmaz" 0.58); `score_threshold=0.7` ile bu isimler maskelenmez.
+Şablonlardaki isimler kolaydır (büyük harfle, tam ad, belirgin yerlerde); gerçekçi isim sonucu için aşağıdaki
+üçüncü taraf setlere bakın. Model skorları bazen 0.7'nin altında kalır ("Ayşe Yılmaz"da "Yılmaz" 0.58);
+`score_threshold=0.7` ile bu isimler maskelenmez.
 
 Veri tamamen sentetiktir (Faker `tr_TR` + şablonlar, seed 42). Bağlam kelimesinin yanında duran PII olmayan
 sayılar ("Kimlik doğrulama kodunuz ...") ve bağlamsız zor PII örnekleri bilerek eklenmiştir. Yeniden üretmek için:
@@ -106,10 +104,41 @@ sayılar ("Kimlik doğrulama kodunuz ...") ve bağlamsız zor PII örnekleri bil
 ```bash
 uv sync --group benchmark && uv run python -m benchmark.generate --n 1000 --seed 42 && uv run python -m benchmark.run
 uv run python -m benchmark.generate --templates heldout --out benchmark/data/tr_pii_heldout.jsonl && uv run python -m benchmark.run --data benchmark/data/tr_pii_heldout.jsonl --tag heldout
-uv run python -m benchmark.handwritten && uv run python -m benchmark.run --data benchmark/data/tr_pii_handwritten.jsonl --tag handwritten
 ```
 
 İsim satırı için `uv sync --group benchmark --extra ner` ile kurup `benchmark.run`'a `--ner` ekleyin.
+
+### Üçüncü taraf setler
+
+Başkalarının yayınladığı üç Türkçe PII seti sabit sürümle indirilir (`uv run python -m benchmark.external`). Hepsi
+sentetiktir ama bizim şablonlarımızdan bağımsızdır; tanıyıcılar bu setlere göre ayarlanmadı. F1:
+
+| Set | Sistem | TCKN | VKN | IBAN | Telefon | İsim | E-posta | Kart |
+|---|---|---|---|---|---|---|---|---|
+| Bankacılık mesajları ([cagrigungor](https://huggingface.co/datasets/cagrigungor/turkish-pii-masking-benchmark), 550) | Presidio, Türkçe kurulmuş | 0.62 | 0.00 | 0.00 | 0.92 | 0.00 | 1.00 | 0.00 |
+| | presidio-tr, `ner=True` | 0.62 | 0.67 | 0.31 | 0.92 | 0.93 | 1.00 | 0.10 |
+| [BTX24](https://huggingface.co/datasets/BTX24/turkish-privacy-pii-ner) test (10.393) | Presidio, Türkçe kurulmuş | 0.12 | 0.00 | 0.02 | 0.93 | 0.00 | 0.84 | — |
+| | presidio-tr, `ner=True` | 0.70 | 0.72 | 0.86 | 0.96 | 0.84 | 0.84 | — |
+| [fevziegeyurtsevenler](https://huggingface.co/datasets/fevziegeyurtsevenler/turkish-pii-corpus) (155) | Presidio, Türkçe kurulmuş | 1.00 | 0.00 | 1.00 | 0.95 | — | 1.00 | 0.00 |
+| | presidio-tr, `ner=True` | 1.00 | 1.00 | 1.00 | 1.00 | — | 1.00 | 0.93 |
+
+Okurken:
+
+- Bankacılık ve BTX24 setlerindeki numaraların çoğu checksum'ı tutmaz (bankacılıkta IBAN ve kartların hiçbiri,
+  BTX24'te TCKN'lerin %6'sı). presidio-tr bunları yalnızca yanında bağlam kelimesi varsa yakalar; düşük recall
+  büyük ölçüde buradan gelir.
+- Bankacılık setinde kaçanlar ayrıca: yazıyla yazılmış rakamlar ("tc dokuz dokuz yedi …"), tireli/boşluklu TCKN
+  (`645-175-336-66`) ve küçük harfle "ıban" yazılmış bağlam kelimesi ("ıban paylaşıyorum TR81 …").
+- İsim yanlış pozitiflerinin çoğu e-posta adresi içindeki isim parçalarıdır (`halil.ozdemir@…`); e-posta zaten
+  maskelendiği için maskelemeye zarar vermez. BTX24'ten 2500 cümlelik örnekte 98 yanlış pozitifin hepsi böyledir.
+- BTX24'te kaçan e-postalar `.invalid` gibi gerçek olmayan alan adlarıdır; Presidio'nun e-posta tanıyıcısı bunları
+  kabul etmez.
+- Kısmen maskelenmiş değerler (`753347****`) ve ölçülmeyen türler (adres, plaka, sağlık…) ölçüme girmez. Ayrıntı:
+  [`docs/design.md`](docs/design.md). BTX24 CC BY 4.0, bankacılık seti CC0, fevziegeyurtsevenler Apache 2.0 lisanslıdır.
+
+Sonuç dosyaları: [`2026-11-17-cagrigungor.md`](benchmark/results/2026-11-17-cagrigungor.md),
+[`2026-11-17-btx24.md`](benchmark/results/2026-11-17-btx24.md),
+[`2026-11-17-fevziegeyurtsevenler.md`](benchmark/results/2026-11-17-fevziegeyurtsevenler.md).
 
 ### Ödünleşim
 
@@ -178,7 +207,8 @@ E2E testler çalışan compose yığınını ve bir OpenAI anahtarını ister. C
 - Adres tanınmaz. İsim tanıma isteğe bağlıdır; isme benzeyen sıradan kelimeler ("Barış", "Umut") yanlış
   maskelenebilir, isim kaçabilir ("Umut Barış Gül"de "Gül").
 - Bağlamsız ve checksum'ı bozuk TCKN maskelenmez; bağlamsız VKN de maskelenmez.
-- Desteklenmeyen yazımlar: boşluklu TCKN (`100 000 001 46`), `TR` sonrası boşluklu ya da tireli IBAN (`TR 33 …`,
+- Desteklenmeyen yazımlar: yazıyla yazılmış rakamlar ("dokuz dokuz yedi …"), küçük harfle "ıban" yazılmış bağlam
+  kelimesi, boşluklu ya da tireli TCKN (`100 000 001 46`, `645-175-336-66`), `TR` sonrası boşluklu ya da tireli IBAN (`TR 33 …`,
   `TR33-0006-…`), noktalı telefon (`0532.123.45.67`), 0850/0800 ve 444'lü numaralar.
 - Bir değerin bağlam kelimesi, yanındaki başka bir değeri de 0.6 kademesine sokabilir.
 - Langfuse'a giden log kopyası için garanti fail-open'dır: LiteLLM'in logging hook'u bloklamaz, Presidio o anda hata
