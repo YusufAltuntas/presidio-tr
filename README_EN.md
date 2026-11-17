@@ -129,7 +129,10 @@ Reading notes:
 - Most numbers in the banking and BTX24 sets fail their checksum (none of the banking IBANs and cards, 6% of the
   BTX24 TCKNs). presidio-tr only catches those with a context word nearby, which explains most of the low recall.
 - The banking set also has misses from numbers written as words ("tc dokuz dokuz yedi …"), hyphenated or spaced
-  TCKNs (`645-175-336-66`) and the context word typed as "ıban" ("ıban paylaşıyorum TR81 …").
+  TCKNs (`645-175-336-66`) and the context word typed as "ıban" ("ıban paylaşıyorum TR81 …"). The last two were
+  fixed after this run: banking TCKN F1 0.62 → 0.87, IBAN 0.31 → 0.62; BTX24 TCKN 0.70 → 0.92. Precision stayed at
+  1.00 and the main sets did not change. The table is the blind result; the post-fix results are in the `*-fixed`
+  files. These sets are no longer blind.
 - Most name false positives are name parts inside email addresses (`halil.ozdemir@…`); the email is masked anyway, so
   masking is not affected. In a 2,500-sentence BTX24 sample, all 98 name false positives are of this kind.
 - The emails missed in BTX24 use non-existent domains such as `.invalid`, which Presidio's email recognizer rejects.
@@ -195,7 +198,7 @@ section of [`docs/design.md`](docs/design.md).
 ## Tests
 
 ```bash
-uv run pytest                                                 # unit tests (127; name tests are skipped without the `ner` extra)
+uv run pytest                                                 # unit tests (137; name tests are skipped without the `ner` extra)
 set -a && . deploy/.env && set +a && uv run pytest -m e2e     # end-to-end (7)
 ```
 
@@ -207,8 +210,7 @@ pre-commit runs gitleaks + ruff (`uvx pre-commit install`).
 - Addresses are not recognized. Name recognition is optional; ordinary words that look like names ("Barış",
   "Umut") can be masked, and names can be missed ("Gül" in "Umut Barış Gül").
 - A checksum-invalid TCKN with no context is not masked; neither is a VKN without context.
-- Unsupported forms: numbers written as words ("dokuz dokuz yedi …"), the context word typed as "ıban", spaced or
-  hyphenated TCKN (`100 000 001 46`, `645-175-336-66`), IBAN with a space or hyphens after `TR` (`TR 33 …`,
+- Unsupported forms: numbers written as words ("dokuz dokuz yedi …"), IBAN with a space or hyphens after `TR` (`TR 33 …`,
   `TR33-0006-…`), dotted phone (`0532.123.45.67`), 0850/0800 and 444 numbers.
 - One value's context word can push a neighbouring value into the 0.6 tier.
 - The guarantee for the log copy sent to Langfuse is fail-open: LiteLLM's logging hook is non-blocking, so if

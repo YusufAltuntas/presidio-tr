@@ -138,6 +138,7 @@ Plan yazılırken presidio-analyzer 2.2.366 ve LiteLLM 1.109.1 ile bir deneme (s
    tanıyıcının içinde yapılır: eşleşmenin çevresindeki kelimeler, Türkçe küçük harfe çevrilip kök önekiyle
    karşılaştırılır. Ünsüz yumuşaması için kökün iki hali de listelenir (`hesap`/`hesab`, `kimlik`/`kimliğ`).
    Türkçe küçültme kısaltmaları bozar ("IBAN" → "ıban"), bu yüzden hem Türkçe hem standart küçültme denenir.
+   Türkçe klavyeyle doğrudan küçük harf yazılan "ıban" için ayrıca `ıban` kökü listelenir.
    Tanıyıcılara Presidio `context` verilmez, böylece Presidio'nun güçlendiricisi devreye girmez.
    ≤3 karakterli kökler (`tc`, `vkn`, `tel`, `gsm`, `cep`) yalnızca tam kelimeyle eşleşir ("telif", "cephe" bağlam sayılmasın diye); yaygın bileşik biçimler (`tcno`, `vkno`, `telno` …) ayrı önek kökü olarak listelenir; `telim`, `telden` gibi diğer ekli biçimler bağlam sayılmaz. `ulaş` yerine fiil biçimleri (`ulaşa`, `ulaşın`, `ulaşıl`) kullanılır, "ulaşım" eşleşmez. Nokta hem silinir hem boşluğa çevrilir ("T.C." → `tc`, "Tel.No" → `tel`).
 3. **Aynı türden iki değer — çözüldü.** LiteLLM etiketleri kendisi numaralıyor (`<TR_NATIONAL_ID_1>`,
@@ -203,7 +204,9 @@ Plan yazılırken presidio-analyzer 2.2.366 ve LiteLLM 1.109.1 ile bir deneme (s
   BTX24/turkish-privacy-pii-ner (test bölümü) ve fevziegeyurtsevenler/turkish-pii-corpus. Ölçmediğimiz türler
   (adres, plaka, sağlık…) ve `*` içeren, zaten maskelenmiş değerler `ignore` aralığı olur: üzerlerine düşen tahmin
   ne TP ne FP sayılır. 10+ haneli etiketsiz sayılar yanlış maskeleme negatifi sayılır. Tanıyıcılar bu setlere göre
-  ayarlanmadı; ilk sonuçlar körlemesine alındı (2026-11-17).
+  ayarlanmadı; ilk sonuçlar körlemesine alındı (2026-11-17). Ardından bu setlerde bulunan iki açık düzeltildi
+  ("ıban" bağlam kökü, tireli/boşluklu TCKN); düzeltme sonrası sonuçlar `-fixed` etiketiyle ayrı tutulur ve bu
+  setler artık kör sayılmaz.
 - **Elle yazılmış set:** `benchmark/handwritten.txt`, `[değer](VARLIK)` işaretli cümleler; isme benzeyen sıradan
   kelimeler gibi şablonlarda olmayan zor durumlar için. Tanıyıcıları görmeden yazılır.
 - **Bağımsız set:** `HELDOUT_TEMPLATES`, koda erişimi olmayan ayrı bir LLM ajanına yalnızca alan listesi, hangi alanın PII olduğu ve bir dağılım isteğiyle yazdırılmış 24 şablon: 12 PII'li (en az 3'ü ipucu kelimesiz, en az 2'si yazım hatalı alanla) ve 12 PII'siz (PII kelimelerine yakın numaralar dahil). Değer üreteçleri ana setle ortaktır; yalnızca cümle şablonları bağımsızdır.

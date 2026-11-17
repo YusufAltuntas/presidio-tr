@@ -128,7 +128,10 @@ Okurken:
   BTX24'te TCKN'lerin %6'sı). presidio-tr bunları yalnızca yanında bağlam kelimesi varsa yakalar; düşük recall
   büyük ölçüde buradan gelir.
 - Bankacılık setinde kaçanlar ayrıca: yazıyla yazılmış rakamlar ("tc dokuz dokuz yedi …"), tireli/boşluklu TCKN
-  (`645-175-336-66`) ve küçük harfle "ıban" yazılmış bağlam kelimesi ("ıban paylaşıyorum TR81 …").
+  (`645-175-336-66`) ve küçük harfle "ıban" yazılmış bağlam kelimesi ("ıban paylaşıyorum TR81 …"). Son ikisi bu
+  ölçümden sonra düzeltildi: bankacılıkta TCKN F1 0.62 → 0.87, IBAN 0.31 → 0.62; BTX24'te TCKN 0.70 → 0.92.
+  Precision 1.00 kaldı, ana setlerde sonuç değişmedi. Tablo körlemesine sonuçtur; düzeltme sonrası `*-fixed`
+  dosyalarındadır. Bu setler artık kör değildir.
 - İsim yanlış pozitiflerinin çoğu e-posta adresi içindeki isim parçalarıdır (`halil.ozdemir@…`); e-posta zaten
   maskelendiği için maskelemeye zarar vermez. BTX24'ten 2500 cümlelik örnekte 98 yanlış pozitifin hepsi böyledir.
 - BTX24'te kaçan e-postalar `.invalid` gibi gerçek olmayan alan adlarıdır; Presidio'nun e-posta tanıyıcısı bunları
@@ -195,7 +198,7 @@ olduğu (`presidio_filter_scope: input`, ikinci `logging_only` guardrail'i) [`do
 ## Testler
 
 ```bash
-uv run pytest                                                 # birim testler (127; `ner` eki yoksa isim testleri atlanır)
+uv run pytest                                                 # birim testler (137; `ner` eki yoksa isim testleri atlanır)
 set -a && . deploy/.env && set +a && uv run pytest -m e2e     # uçtan uca (7)
 ```
 
@@ -207,8 +210,7 @@ E2E testler çalışan compose yığınını ve bir OpenAI anahtarını ister. C
 - Adres tanınmaz. İsim tanıma isteğe bağlıdır; isme benzeyen sıradan kelimeler ("Barış", "Umut") yanlış
   maskelenebilir, isim kaçabilir ("Umut Barış Gül"de "Gül").
 - Bağlamsız ve checksum'ı bozuk TCKN maskelenmez; bağlamsız VKN de maskelenmez.
-- Desteklenmeyen yazımlar: yazıyla yazılmış rakamlar ("dokuz dokuz yedi …"), küçük harfle "ıban" yazılmış bağlam
-  kelimesi, boşluklu ya da tireli TCKN (`100 000 001 46`, `645-175-336-66`), `TR` sonrası boşluklu ya da tireli IBAN (`TR 33 …`,
+- Desteklenmeyen yazımlar: yazıyla yazılmış rakamlar ("dokuz dokuz yedi …"), `TR` sonrası boşluklu ya da tireli IBAN (`TR 33 …`,
   `TR33-0006-…`), noktalı telefon (`0532.123.45.67`), 0850/0800 ve 444'lü numaralar.
 - Bir değerin bağlam kelimesi, yanındaki başka bir değeri de 0.6 kademesine sokabilir.
 - Langfuse'a giden log kopyası için garanti fail-open'dır: LiteLLM'in logging hook'u bloklamaz, Presidio o anda hata
