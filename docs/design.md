@@ -29,8 +29,9 @@ Paket Microsoft'un resmi projesi değildir; README'nin tepesinde bu açıkça ya
 - Demo: `docker compose` ile LiteLLM + Presidio (paketli imaj) + Langfuse.
 - Anahtar başı bütçe ve end-user attribution — yalnızca LiteLLM config'i, kod yok.
 
-**v1'de yok:** adres, plaka (Presidio'da var), kendi guardrail kodumuz, Presidio'ya upstream PR
-(v1 sonrası ayrı iş), PyPI yayını (en son, isteğe bağlı).
+**v1'de yok:** adres, plaka (Presidio'da var), kendi guardrail kodumuz, PyPI yayını (isteğe bağlı). Presidio'ya VKN
+için upstream PR açılmadı: aynı işi yapan iki açık PR var (data-privacy-stack/presidio#2250, #2450). Bunun yerine
+gateway demosunda bulunan LiteLLM hataları bildirildi ve düzeltildi (Riskler, madde 4).
 
 ## Mimari
 
@@ -39,6 +40,8 @@ presidio-tr/
 ├── src/presidio_tr/
 │   ├── validators.py        # saf fonksiyonlar, Presidio bağımlılığı yok
 │   ├── recognizers/         # TcKimlikRecognizer, VknRecognizer, TrIbanRecognizer, TrPhoneRecognizer
+│   │   └── base.py          # üç kademeli skorlama (checksum + bağlam)
+│   ├── ner.py               # isteğe bağlı isim tanıma (extra: ner)
 │   ├── context.py           # Türkçe bağlam kelimeleri
 │   ├── server.py            # Presidio analyzer HTTP API'siyle uyumlu /analyze (extra: server)
 │   └── __init__.py          # add_turkish_recognizers(registry), build_analyzer()
@@ -46,7 +49,8 @@ presidio-tr/
 │   ├── synth.py             # checksum'ı geçerli/geçersiz sentetik değer üreticileri
 │   ├── generate.py          # Faker('tr_TR') + şablonlar → etiketli JSONL (sabit seed)
 │   ├── run.py               # varlık türü başına precision / recall / F1 + yanlış maskeleme
-│   └── results/             # <YYYY-MM-DD>.md — commit'lenir
+│   ├── external.py          # üçüncü taraf setleri sabit sürümle indirir ve çevirir
+│   └── results/             # <YYYY-MM-DD>[-<etiket>].md — commit'lenir
 ├── deploy/
 │   ├── docker-compose.yml   # Langfuse'un resmi compose'unu `include` eder
 │   ├── langfuse/            # Langfuse'un resmi docker-compose.yml'i, sabit sürümden kopya
@@ -63,7 +67,8 @@ presidio-tr/
 | `validators` | "Bu numara geçerli mi?" — TCKN ve VKN checksum, TR IBAN uzunluk + mod-97 | Hiçbir şey |
 | `recognizers` | Regex ile aday bulur, validator + bağlam ile skorlar | Presidio, `validators`, `context` |
 | `context` | Türkçe bağlam kelimeleri ve ek toleranslı eşleştirme | Hiçbir şey |
-| `benchmark` | Veri üretir, dört sistemi karşılaştırır | Paket (dışarıdan) |
+| `ner` | İsim tanıma (Hugging Face Türkçe NER modeli) | Presidio, transformers + torch (`ner` eki) |
+| `benchmark` | Veri üretir ya da üçüncü taraf seti çevirir, beş sistemi karşılaştırır | Paket (dışarıdan) |
 | `deploy` | Gateway demosu | Paketin Docker imajı |
 
 Paket, benchmark'tan ve deploy'dan habersizdir.
@@ -76,6 +81,8 @@ Paket, benchmark'tan ve deploy'dan habersizdir.
 | `VknRecognizer` | `TR_TAX_ID` | |
 | `TrIbanRecognizer` | `IBAN_CODE` | Presidio'nun adıyla aynı, mevcut config'lerle uyumlu kalsın diye. Varsayılan `AnalyzerEngine()` hazır tanıyıcıları yalnızca `en` için kaydeder; TR'ye özel (26 karakter, `TR` öneki, mod-97) sürüm yazım hatası kademesini de ekler. |
 | `TrPhoneRecognizer` | `PHONE_NUMBER` | Aynı gerekçe. |
+| `TurkishPersonRecognizer` | `PERSON` | İsteğe bağlı (`build_analyzer(ner=True)`). |
+| Presidio `EmailRecognizer`, `CreditCardRecognizer` | `EMAIL_ADDRESS`, `CREDIT_CARD` | Presidio'nun kendi tanıyıcıları; `build_analyzer()` `tr` için ekler. |
 
 ### Skorlama kuralı
 
@@ -89,6 +96,8 @@ Checksum'dan geçemeyen numarayı düz atlamak güvenlik açığıdır (bir hane
 | Checksum geçersiz, bağlam yok | Atlanır (sipariş no vb. maskelenmez) |
 
 Telefonun checksum'ı yok; format (`+90`, `0`, `5xx`, boşluk/tire varyantları) + bağlam ile skorlanır.
+TCKN'nin rakamları arasında tek boşluk ya da tire olabilir (`100-000-001-46`); aday başka bir rakam grubunun
+ortasından başlamaz, böylece boşluklu bir IBAN'ın içindeki rakamlar TCKN sanılmaz.
 
 **VKN istisnası — bağlam zorunlu.** VKN'nin tek kontrol hanesi var; rastgele 10 haneli sayıların ~%10'u checksum'dan
 geçer. Bu yüzden VKN yakınında bağlam kelimesi yoksa checksum geçerli olsa da atlanır; bağlam varsa yukarıdaki iki
@@ -168,7 +177,10 @@ Plan yazılırken presidio-analyzer 2.2.366 ve LiteLLM 1.109.1 ile bir deneme (s
 **Birim (CI'da):**
 - `validators`: algoritmayla üretilmiş geçerli/geçersiz TCKN ve VKN; TR IBAN; sınır durumlar (0 ile başlayan,
   10/12 hane, boşluklu yazım).
-- `recognizers`: üç kademeli skor kuralı; Türkçe ekli bağlam ("IBAN'ımı", "TC'm").
+- `recognizers` ve `context`: üç kademeli skor kuralı; Türkçe ekli bağlam ("IBAN'ımı", "TC'm", "ıban"); ayraçlı TCKN.
+- `build_analyzer` ve sunucu: Türkçe tanıyıcılar, e-posta ve kart, `score_threshold`, `PRESIDIO_TR_NER`.
+- `ner`: isim tanıma; `ner` eki kurulu değilse atlanır (CI'da atlanır).
+- `benchmark`: veri üretimi, puanlama ve üçüncü taraf set dönüştürücüleri.
 
 **Uçtan uca (lokal, `-m e2e`):**
 - Streaming ve non-streaming'de maskeleme + geri açma.
@@ -195,7 +207,8 @@ Plan yazılırken presidio-analyzer 2.2.366 ve LiteLLM 1.109.1 ile bir deneme (s
   tanıyıcıları ve kendi `TrNationalIdRecognizer`'ı (varsayılan kapalı, elle eklenir); hazır `PhoneRecognizer`'ın
   bölge listesinde TR olmadığı için `supported_regions=["TR"]` ile kurulmuşu kullanılır; (c) Presidio +
   `presidio-tr`, `language=tr`; (d) (c)'nin `score_threshold=0.7` ile çalıştırılmışı —
-  bağlam kademesi kapalı, kesinlik tercih edenler için. Varlık türü başına P/R/F1.
+  bağlam kademesi kapalı, kesinlik tercih edenler için; (e) `--ner` verilirse (c)'nin isim tanımalı hali.
+  Varlık türü başına P/R/F1; veride altın aralığı olmayan türler rapora yazılmaz.
 - Bağlamsız zor PII şablonları (bağlamsız VKN, öneksiz telefon) bilerek eklenir; recall şablon bağlamıyla şişmesin.
 - Şablonlardaki `{name}` alanı `PERSON` olarak etiketlenir; isim tanımalı sistem `--ner` ile eklenir.
 - **Üçüncü taraf setler:** `benchmark/external.py` üç Hugging Face setini sabit commit ile indirir ve çevirir:
@@ -207,8 +220,6 @@ Plan yazılırken presidio-analyzer 2.2.366 ve LiteLLM 1.109.1 ile bir deneme (s
   ayarlanmadı; ilk sonuçlar körlemesine alındı (2026-11-17). Ardından bu setlerde bulunan iki açık düzeltildi
   ("ıban" bağlam kökü, tireli/boşluklu TCKN); düzeltme sonrası sonuçlar `-fixed` etiketiyle ayrı tutulur ve bu
   setler artık kör sayılmaz.
-- **Elle yazılmış set:** `benchmark/handwritten.txt`, `[değer](VARLIK)` işaretli cümleler; isme benzeyen sıradan
-  kelimeler gibi şablonlarda olmayan zor durumlar için. Tanıyıcıları görmeden yazılır.
 - **Bağımsız set:** `HELDOUT_TEMPLATES`, koda erişimi olmayan ayrı bir LLM ajanına yalnızca alan listesi, hangi alanın PII olduğu ve bir dağılım isteğiyle yazdırılmış 24 şablon: 12 PII'li (en az 3'ü ipucu kelimesiz, en az 2'si yazım hatalı alanla) ve 12 PII'siz (PII kelimelerine yakın numaralar dahil). Değer üreteçleri ana setle ortaktır; yalnızca cümle şablonları bağımsızdır.
   Tanıyıcılar bu sete göre ayarlanmaz; sonucu ana setten ayrı raporlanır.
 - Tür gözetmeyen "maskelenen" oranı da raporlanır: varsayılan Presidio TC kimliği yanlış türle

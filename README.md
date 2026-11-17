@@ -7,7 +7,7 @@ isim.
 Bir LiteLLM gateway demosuyla birlikte gelir: Türkçe metindeki kişisel veri LLM sağlayıcısına gitmeden maskelenir,
 cevapta geri açılır. Microsoft'un resmi projesi değildir; topluluk paketidir.
 
-**Kısaca** (1000 sentetik cümle, Türkçe kurulmuş Presidio'ya karşı):
+**Kısaca** (ilk üç madde 1000 cümlelik sentetik ana sette, Türkçe kurulmuş Presidio'ya karşı):
 
 - VKN: Presidio'da tanıyıcısı yok; `presidio-tr` ile F1 0.79.
 - TR telefon F1: 0.72 → 0.89. IBAN F1: 0.93 → 1.00.
@@ -110,8 +110,8 @@ uv run python -m benchmark.generate --templates heldout --out benchmark/data/tr_
 
 ### Üçüncü taraf setler
 
-Başkalarının yayınladığı üç Türkçe PII seti sabit sürümle indirilir (`uv run python -m benchmark.external`). Hepsi
-sentetiktir ama bizim şablonlarımızdan bağımsızdır; tanıyıcılar bu setlere göre ayarlanmadı. F1:
+Başkalarının yayınladığı üç Türkçe PII seti sabit sürümle indirilir. Hepsi sentetiktir ama bizim şablonlarımızdan
+bağımsızdır. Tablo, tanıyıcılar bu setlere göre ayarlanmadan alınan körlemesine sonuçtur. F1:
 
 | Set | Sistem | TCKN | VKN | IBAN | Telefon | İsim | E-posta | Kart |
 |---|---|---|---|---|---|---|---|---|
@@ -142,6 +142,13 @@ Okurken:
 Sonuç dosyaları: [`2026-11-17-cagrigungor.md`](benchmark/results/2026-11-17-cagrigungor.md),
 [`2026-11-17-btx24.md`](benchmark/results/2026-11-17-btx24.md),
 [`2026-11-17-fevziegeyurtsevenler.md`](benchmark/results/2026-11-17-fevziegeyurtsevenler.md).
+
+Üçüncü taraf setleri indirip ölçmek için:
+
+```bash
+uv sync --group benchmark --extra ner && uv run python -m benchmark.external
+for n in cagrigungor btx24 fevziegeyurtsevenler; do uv run python -m benchmark.run --ner --data benchmark/data/external/$n.jsonl --tag $n; done
+```
 
 ### Ödünleşim
 
@@ -198,7 +205,7 @@ olduğu (`presidio_filter_scope: input`, ikinci `logging_only` guardrail'i) [`do
 ## Testler
 
 ```bash
-uv run pytest                                                 # birim testler (137; `ner` eki yoksa isim testleri atlanır)
+uv run pytest                                                 # birim testler (134; `ner` eki yoksa isim testleri atlanır)
 set -a && . deploy/.env && set +a && uv run pytest -m e2e     # uçtan uca (7)
 ```
 

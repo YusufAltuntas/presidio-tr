@@ -7,7 +7,7 @@ and optional person names.
 Ships with a LiteLLM gateway demo: personal data in Turkish text is masked before it reaches the LLM provider and
 restored in the answer. This is not an official Microsoft project; it is a community package.
 
-**In short** (1000 synthetic sentences, against Presidio set up for Turkish):
+**In short** (first three points on the 1000-sentence synthetic main set, against Presidio set up for Turkish):
 
 - VKN: no recognizer upstream; F1 0.79 with `presidio-tr`.
 - TR phone F1: 0.72 → 0.89. IBAN F1: 0.93 → 1.00.
@@ -112,8 +112,8 @@ For the name row, install with `uv sync --group benchmark --extra ner` and add `
 
 ### Third-party sets
 
-Three Turkish PII sets published by others are downloaded at a pinned revision (`uv run python -m benchmark.external`).
-All are synthetic but independent of our templates; the recognizers were not tuned on them. F1:
+Three Turkish PII sets published by others are downloaded at a pinned revision. All are synthetic but independent of
+our templates. The table is the blind result, taken before the recognizers were tuned on these sets. F1:
 
 | Set | System | TCKN | VKN | IBAN | Phone | Name | Email | Card |
 |---|---|---|---|---|---|---|---|---|
@@ -142,6 +142,13 @@ Reading notes:
 Results files: [`2026-11-17-cagrigungor.md`](benchmark/results/2026-11-17-cagrigungor.md),
 [`2026-11-17-btx24.md`](benchmark/results/2026-11-17-btx24.md),
 [`2026-11-17-fevziegeyurtsevenler.md`](benchmark/results/2026-11-17-fevziegeyurtsevenler.md).
+
+To download and measure the third-party sets:
+
+```bash
+uv sync --group benchmark --extra ner && uv run python -m benchmark.external
+for n in cagrigungor btx24 fevziegeyurtsevenler; do uv run python -m benchmark.run --ner --data benchmark/data/external/$n.jsonl --tag $n; done
+```
 
 ### Trade-off
 
@@ -198,7 +205,7 @@ section of [`docs/design.md`](docs/design.md).
 ## Tests
 
 ```bash
-uv run pytest                                                 # unit tests (137; name tests are skipped without the `ner` extra)
+uv run pytest                                                 # unit tests (134; name tests are skipped without the `ner` extra)
 set -a && . deploy/.env && set +a && uv run pytest -m e2e     # end-to-end (7)
 ```
 
